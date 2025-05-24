@@ -1,0 +1,277 @@
+import apiClient from './api';
+
+// ==================== AUTH SERVICE ====================
+export const authService = {
+  // Register new user
+  register: async (userData) => {
+    const response = await apiClient.post('/api/v1/auth/register', userData);
+    return response.data;
+  },
+
+  // Login user
+  login: async (credentials) => {
+    const response = await apiClient.post('/api/v1/auth/login', credentials);
+    return response.data;
+  },
+
+  // Get current user account
+  getAccount: async () => {
+    const response = await apiClient.get('/api/v1/auth/account');
+    return response.data;
+  },
+
+  // Logout user
+  logout: async () => {
+    const response = await apiClient.post('/api/v1/auth/logout');
+    return response.data;
+  },
+
+  // Refresh token
+  refreshToken: async () => {
+    const response = await apiClient.post('/api/v1/auth/refresh');
+    return response.data;
+  },
+};
+
+// ==================== TOURNAMENT SERVICE ====================
+export const tournamentService = {
+  // Get all tournaments
+  getAllTournaments: async (params = {}) => {
+    const response = await apiClient.get('/api/tournaments', { params });
+    return response.data;
+  },
+
+  // Get tournament by ID
+  getTournamentById: async (id) => {
+    const response = await apiClient.get(`/api/tournaments/${id}`);
+    return response.data;
+  },
+
+  // Create tournament
+  createTournament: async (tournamentData) => {
+    const response = await apiClient.post('/api/tournaments', tournamentData);
+    return response.data;
+  },
+
+  // Update tournament
+  updateTournament: async (id, tournamentData) => {
+    const response = await apiClient.put(`/api/tournaments/${id}`, tournamentData);
+    return response.data;
+  },
+
+  // Delete tournament
+  deleteTournament: async (id) => {
+    const response = await apiClient.delete(`/api/tournaments/${id}`);
+    return response.data;
+  },
+
+  // Start tournament
+  startTournament: async (id) => {
+    const response = await apiClient.post(`/api/tournaments/${id}/start`);
+    return response.data;
+  },
+};
+
+// ==================== TOURNAMENT KNOCKOUT SERVICE ====================
+export const tournamentKnockoutService = {
+  // Generate tournament bracket
+  generateBracket: async (tournamentId, bracketData) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/generate-bracket`, bracketData);
+    return response.data;
+  },
+
+  // Start knockout tournament
+  startKnockout: async (tournamentId) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/start-knockout`);
+    return response.data;
+  },
+
+  // Advance to next round
+  advanceRound: async (tournamentId) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/advance-round`);
+    return response.data;
+  },
+
+  // Complete tournament
+  completeTournament: async (tournamentId) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/complete`);
+    return response.data;
+  },
+};
+
+// ==================== TEAM SERVICE ====================
+export const teamService = {
+  // Get teams by tournament
+  getTeamsByTournament: async (tournamentId) => {
+    const response = await apiClient.get(`/api/tournaments/${tournamentId}/teams`);
+    return response.data;
+  },
+
+  // Get team by ID
+  getTeamById: async (id) => {
+    const response = await apiClient.get(`/api/teams/${id}`);
+    return response.data;
+  },
+
+  // Register team for tournament
+  registerTeam: async (tournamentId, teamData) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/register`, teamData);
+    return response.data;
+  },
+
+  // Update team
+  updateTeam: async (id, teamData) => {
+    const response = await apiClient.put(`/api/teams/${id}`, teamData);
+    return response.data;
+  },
+
+  // Delete team
+  deleteTeam: async (id) => {
+    const response = await apiClient.delete(`/api/teams/${id}`);
+    return response.data;
+  },
+};
+
+// ==================== MATCH SERVICE ====================
+export const matchService = {
+  // Get matches by tournament
+  getMatchesByTournament: async (tournamentId, params = {}) => {
+    const response = await apiClient.get(`/api/tournaments/${tournamentId}/matches`, { params });
+    return response.data;
+  },
+
+  // Get match by ID
+  getMatchById: async (id) => {
+    const response = await apiClient.get(`/api/matches/${id}`);
+    return response.data;
+  },
+
+  // Create match
+  createMatch: async (tournamentId, matchData) => {
+    const response = await apiClient.post(`/api/tournaments/${tournamentId}/matches`, matchData);
+    return response.data;
+  },
+
+  // Update match score
+  updateMatchScore: async (id, scoreData) => {
+    const response = await apiClient.put(`/api/matches/${id}/score`, scoreData);
+    return response.data;
+  },
+
+  // Update match status
+  updateMatchStatus: async (id, statusData) => {
+    const response = await apiClient.put(`/api/matches/${id}/status`, statusData);
+    return response.data;
+  },
+
+  // Get tournament bracket
+  getTournamentBracket: async (tournamentId) => {
+    const response = await apiClient.get(`/api/tournaments/${tournamentId}/bracket`);
+    return response.data;
+  },
+};
+
+// ==================== NEWS SERVICE ====================
+export const newsService = {
+  // Get all news
+  getAllNews: async () => {
+    const response = await apiClient.get('/api/v1/news');
+    return response.data;
+  },
+
+  // Get news by ID
+  getNewsById: async (id) => {
+    const response = await apiClient.get(`/api/v1/news/${id}`);
+    return response.data;
+  },
+
+  // Create news
+  createNews: async (newsData) => {
+    const response = await apiClient.post('/api/v1/news', newsData);
+    return response.data;
+  },
+
+  // Update news
+  updateNews: async (id, newsData) => {
+    const response = await apiClient.put(`/api/v1/news/${id}`, newsData);
+    return response.data;
+  },
+
+  // Delete news
+  deleteNews: async (id) => {
+    const response = await apiClient.delete(`/api/v1/news/${id}`);
+    return response.data;
+  },
+
+  // Upload files for news
+  uploadFiles: async (newsId, files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    
+    const response = await apiClient.post(`/api/v1/news/uploads/${newsId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Get image
+  getImage: async (imageName) => {
+    const response = await apiClient.get(`/api/v1/news/image/${imageName}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+};
+
+// ==================== USER MANAGEMENT SERVICE ====================
+// Note: Backend doesn't have dedicated admin/user management endpoints
+// These would need to be implemented in backend
+export const userService = {
+  // Get current user profile (using auth account endpoint)
+  getCurrentUser: async () => {
+    return authService.getAccount();
+  },
+
+  // Note: The following endpoints need to be implemented in backend
+  // getAllUsers: async (params = {}) => { /* Backend needs implementation */ },
+  // updateUser: async (userId, userData) => { /* Backend needs implementation */ },
+  // deleteUser: async (userId) => { /* Backend needs implementation */ },
+  // getUserById: async (userId) => { /* Backend needs implementation */ },
+};
+
+// ==================== SYSTEM/ADMIN SERVICE ====================
+// Note: Backend doesn't have system/admin endpoints
+// These would need to be implemented in backend
+export const systemService = {
+  // Note: The following endpoints need to be implemented in backend
+  // getSystemStats: async () => { /* Backend needs implementation */ },
+  // getSystemHealth: async () => { /* Backend needs implementation */ },
+  // getApplicationLogs: async (params = {}) => { /* Backend needs implementation */ },
+};
+
+// ==================== DEBUG SERVICE ====================
+// Note: Backend has DebugController but endpoints are not documented
+export const debugService = {
+  // Note: Check backend DebugController for available endpoints
+  // Backend implementation needed for proper debug endpoints
+};
+
+// ==================== EXPORT ALL SERVICES ====================
+export const apiServices = {
+  auth: authService,
+  tournament: tournamentService,
+  tournamentKnockout: tournamentKnockoutService,
+  team: teamService,
+  match: matchService,
+  news: newsService,
+  user: userService,
+  system: systemService,
+  debug: debugService,
+};
+
+// For backward compatibility
+export const adminService = systemService;
+
+export default apiServices;
