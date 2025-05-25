@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { 
-  FileText, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
+import {
+  FileText,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
   Filter,
   Eye,
   Calendar,
@@ -19,12 +19,17 @@ import { newsService } from '../../services';
 import { formatDate } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
+// IMPORT MODAL COMPONENTS Ở ĐÂY
+import CreateNewsModal from './CreateNewsModal';
+import EditNewsModal from './EditNewsModal';
+
+
 const NewsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedNews, setSelectedNews] = useState(null);
+  const [selectedNews, setSelectedNews] = useState(null); // Giữ bài viết được chọn để chỉnh sửa
 
   const { data: news, isLoading } = useQuery(
     ['admin-news', { search: searchTerm, status: statusFilter }],
@@ -76,16 +81,20 @@ const NewsManagement = () => {
   );
 
   const filteredNews = news?.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         article.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || article.status === statusFilter;
-    
+    const articleTitle = article?.title || '';
+    const articleContent = article?.content || '';
+    const articleStatus = article?.status || '';
+
+    const matchesSearch = articleTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          articleContent.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !statusFilter || articleStatus === statusFilter;
+
     return matchesSearch && matchesStatus;
   }) || [];
 
   const handleEditNews = (article) => {
-    setSelectedNews(article);
-    setShowEditModal(true);
+    setSelectedNews(article); // Đặt bài viết được chọn vào state
+    setShowEditModal(true); // Hiển thị modal chỉnh sửa
   };
 
   const handleDeleteNews = async (newsId) => {
@@ -102,7 +111,9 @@ const NewsManagement = () => {
   ];
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const effectiveStatus = status || 'DEFAULT';
+
+    switch (effectiveStatus) {
       case 'PUBLISHED':
         return 'bg-green-100 text-green-800';
       case 'DRAFT':
@@ -154,7 +165,7 @@ const NewsManagement = () => {
               className="pl-10 input-field"
             />
           </div>
-          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -184,14 +195,14 @@ const NewsManagement = () => {
                 {article.status || 'PUBLISHED'}
               </div>
             </div>
-            
+
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                {article.title}
+                {article.title || 'No Title'}
               </h3>
-              
+
               <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                {article.content}
+                {article.content || 'No content available.'}
               </p>
 
               <div className="space-y-2 text-sm text-gray-500 mb-4">
@@ -205,7 +216,7 @@ const NewsManagement = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Eye className="h-4 w-4" />
-                  <span>Views: 0</span>
+                  <span>Views: {article.views || 0}</span>
                 </div>
               </div>
 
@@ -233,7 +244,7 @@ const NewsManagement = () => {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                
+
                 <div className="text-xs text-gray-500">
                   ID: {article.id}
                 </div>
@@ -299,12 +310,12 @@ const NewsManagement = () => {
             <PenTool className="h-5 w-5 text-gray-400" />
             <span className="text-gray-600">Write New Article</span>
           </button>
-          
+
           <button className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors">
             <Image className="h-5 w-5 text-gray-400" />
             <span className="text-gray-600">Upload Images</span>
           </button>
-          
+
           <button className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors">
             <Globe className="h-5 w-5 text-gray-400" />
             <span className="text-gray-600">Publish Queue</span>
@@ -333,7 +344,24 @@ const NewsManagement = () => {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* MODAL COMPONENTS - ĐẶT Ở CUỐI CÙNG TRƯỚC THẺ ĐÓNG DIV CHÍNH */}
+      <CreateNewsModal
+          show={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreateNews={(newsData) => createNewsMutation.mutate(newsData)}
+          isCreating={createNewsMutation.isLoading}
+      />
+
+      <EditNewsModal
+          show={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          newsArticle={selectedNews} // Truyền bài viết được chọn vào modal
+          onUpdateNews={({ id, data }) => updateNewsMutation.mutate({ id, data })}
+          isUpdating={updateNewsMutation.isLoading}
+      />
+
+    </div> // Đây là thẻ đóng của div cha bao bọc toàn bộ nội dung của NewsManagement
   );
 };
 

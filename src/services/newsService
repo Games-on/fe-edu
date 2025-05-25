@@ -1,0 +1,56 @@
+// src/services/newsService.js
+import axiosInstance from '../utils/axiosInstance'; // Import axiosInstance đã cấu hình
+
+export const newsService = {
+  // GET /api/v1/news - Lấy tất cả bài viết tin tức
+  getAllNews: async (params = {}) => { // Thêm params để có thể truyền tham số tìm kiếm, lọc
+    const response = await axiosInstance.get('/news', { params });
+    return response.data;
+  },
+
+  // GET /api/v1/news/{id} - Lấy bài viết tin tức theo ID
+  getNewsById: async (id) => {
+    const response = await axiosInstance.get(`/news/${id}`);
+    return response.data;
+  },
+
+  // POST /api/v1/news - Tạo bài viết tin tức mới
+  createNews: async (newsData) => {
+    const response = await axiosInstance.post('/news', newsData);
+    return response.data;
+  },
+
+  // PUT /api/v1/news/{id} - Cập nhật bài viết tin tức
+  updateNews: async (id, newsData) => {
+    const response = await axiosInstance.put(`/news/${id}`, newsData);
+    return response.data;
+  },
+
+  // DELETE /api/v1/news/{id} - Xóa bài viết tin tức
+  deleteNews: async (id) => {
+    const response = await axiosInstance.delete(`/news/${id}`);
+    return response.data;
+  },
+
+  // POST /api/v1/news/uploads/{id} - Upload file đính kèm cho bài viết
+  // newsId là ID của bài viết tin tức, formData là FormData chứa file
+  uploadNewsFile: async (newsId, formData) => {
+    const response = await axiosInstance.post(`/news/uploads/${newsId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Rất quan trọng cho upload file
+      },
+    });
+    return response.data;
+  },
+
+  // GET /api/v1/news/image/{imageName} - Xem hình ảnh
+  // Thường thì bạn có thể trực tiếp sử dụng URL này trong thẻ <img>
+  // Ví dụ: <img src="http://localhost:8080/api/v1/news/image/ten_anh_cua_ban.jpg" />
+  // Hàm này chỉ cần nếu bạn muốn xử lý ảnh bằng JS (ví dụ: hiển thị preview blob)
+  getImage: async (imageName) => {
+    const response = await axiosInstance.get(`/news/image/${imageName}`, {
+      responseType: 'blob' // Trả về dưới dạng blob (binary large object)
+    });
+    return URL.createObjectURL(response.data); // Tạo URL cục bộ để hiển thị ảnh
+  },
+};
