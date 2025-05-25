@@ -94,6 +94,7 @@ function App() {
         <Route path="tournaments/:id" element={<TournamentDetailPage />} />
         <Route path="news" element={<NewsPage />} />
         <Route path="news/:id" element={<NewsDetailPage />} />
+        
 
          {/* Các route cho trang tĩnh */}
           <Route path="/help-center" element={<HelpCenter />} />
