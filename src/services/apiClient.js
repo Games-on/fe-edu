@@ -1,7 +1,6 @@
-// src/services/apiClient.js
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { STORAGE_KEYS } from '../utils/constants.safe'; // Đã điều chỉnh import theo file của bạn
+import { STORAGE_KEYS } from '../utils/constants.safe'; 
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -10,7 +9,7 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json', // Mặc định là JSON
+    'Content-Type': 'application/json', 
   },
 });
 
@@ -24,7 +23,7 @@ apiClient.interceptors.request.use(
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
       params: config.params,
       data: config.data,
-      headers: { ...config.headers, Authorization: config.headers.Authorization ? 'Bearer <TOKEN>' : undefined } // Mask token in logs
+      headers: { ...config.headers, Authorization: config.headers.Authorization ? 'Bearer <TOKEN>' : undefined } 
     });
 
     return config;
@@ -42,11 +41,7 @@ apiClient.interceptors.response.use(
       data: response.data
     });
 
-    // **Thay đổi quan trọng ở đây:**
-    // Trả về trực tiếp `response.data`.
-    // Tầng service (`newsService.js`) hoặc component (`NewsManagement.js`)
-    // sẽ chịu trách nhiệm kiểm tra cấu trúc của `response.data` (ví dụ: có `success` hay `data` không).
-    // Điều này giúp apiClient trở nên "agnostic" hơn về cấu trúc payload của backend.
+
     return response.data;
   },
   (error) => {
@@ -58,7 +53,6 @@ apiClient.interceptors.response.use(
       message: error.message
     });
 
-    // Handle specific status codes with unique toast IDs
     if (response) {
       switch (response.status) {
         case 401: // Unauthorized
@@ -112,13 +106,11 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Helper function: for file upload. Axios automatically sets 'Content-Type': 'multipart/form-data'
-// when sending FormData, so explicitly setting it might not be necessary or can cause issues.
-// We keep it just in case your backend requires it.
+
 export const createFileUploadConfig = (onUploadProgress) => {
   return {
     headers: {
-      'Content-Type': 'multipart/form-data', // Axios typically handles this
+      'Content-Type': 'multipart/form-data', 
     },
     onUploadProgress: (progressEvent) => {
       if (onUploadProgress && progressEvent.total) {
@@ -131,7 +123,7 @@ export const createFileUploadConfig = (onUploadProgress) => {
   };
 };
 
-// Helper function to retry failed requests (keeping your good logic)
+
 export const retryRequest = async (requestFn, maxRetries = 3, delay = 1000) => {
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -146,33 +138,33 @@ export const retryRequest = async (requestFn, maxRetries = 3, delay = 1000) => {
   }
 };
 
-// Helper function to cancel requests (keeping your good logic)
+
 export const createCancelToken = () => {
   return axios.CancelToken.source();
 };
 
-// Export axios instance
+
 export default apiClient;
 
-// Export additional utilities
+
 export {
   API_BASE_URL,
   axios
 };
 
-// Health check function
+
 export const healthCheck = async () => {
   try {
     const response = await apiClient.get('/health');
-    return response; // apiClient returns response.data now
+    return response; 
   } catch (error) {
     console.error('Health check failed:', error);
-    // Error handling done by interceptor, just re-throw or return structured error
+   
     throw error;
   }
 };
 
-// Function to test API connection
+
 export const testConnection = async () => {
   try {
     console.log('Testing API connection to:', API_BASE_URL);
@@ -180,10 +172,10 @@ export const testConnection = async () => {
       params: { page: 1, limit: 1 }
     });
     console.log('API connection successful');
-    return response; // apiClient returns response.data now
+    return response; 
   } catch (error) {
     console.error('API connection failed:', error);
-    // Error handling done by interceptor, just re-throw or return structured error
+    
     throw error;
   }
 };

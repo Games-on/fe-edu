@@ -1,4 +1,3 @@
-// src/components/NewsManagement.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
@@ -15,12 +14,10 @@ import {
   AlertTriangle,
   X
 } from 'lucide-react';
-import newsService from '../../services/newsService'; // Đảm bảo đường dẫn đúng
-import LoadingSpinner from '../LoadingSpinner'; // Đảm bảo đường dẫn đúng
-import toast from 'react-hot-toast'; // Đảm bảo bạn đã cài react-hot-toast
+import newsService from '../../services/newsService'; 
+import LoadingSpinner from '../LoadingSpinner'; 
+import toast from 'react-hot-toast'; 
 
-// Helper functions (Nếu chưa có, hãy tạo src/utils/helpers.js và export chúng)
-// import { formatDate, truncateText } from '../../utils/helpers';
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -44,24 +41,22 @@ const NewsManagement = () => {
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // State cho form tạo tin tức, mô phỏng NewsDTO và selectedFile
   const [newsForm, setNewsForm] = useState({
     name: '',
     shortDescription: '',
     content: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null); // Chỉ 1 file như Angular cũ
+  const [selectedFile, setSelectedFile] = useState(null); 
 
-  const fileInputRef = useRef(null); // Ref cho input file
+  const fileInputRef = useRef(null); 
 
   const queryClient = useQueryClient();
 
-  // --- API Integration: Fetch All News Articles ---
   const { data: news, isLoading, error } = useQuery(
-    ['admin-news', { page, searchTerm }], // Key includes page and searchTerm for invalidation
+    ['admin-news', { page, searchTerm }], 
     async () => {
       console.log("DEBUG FETCH: Fetching news with page:", page, "searchTerm:", searchTerm);
-      const allNews = await newsService.getAllNews(); // newsService.getAllNews() trả về mảng tin tức trực tiếp
+      const allNews = await newsService.getAllNews(); 
 
       // Filtering logic
       let filteredNews = allNews;
@@ -73,7 +68,6 @@ const NewsManagement = () => {
         );
       }
 
-      // Pagination logic
       const itemsPerPage = 6;
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
@@ -95,7 +89,6 @@ const NewsManagement = () => {
       keepPreviousData: true,
       onError: (err) => {
         console.error("DEBUG FETCH ERROR: Error fetching news articles:", err);
-        // Toast message đã được xử lý trong apiClient.js, không cần toast thêm ở đây trừ khi bạn muốn override
       }
     }
   );
@@ -106,11 +99,10 @@ const NewsManagement = () => {
     {
       onSuccess: () => {
         toast.success('News article deleted successfully');
-        queryClient.invalidateQueries('admin-news'); // Refetch news list after deletion
+        queryClient.invalidateQueries('admin-news'); 
       },
       onError: (error) => {
         console.error("DEBUG DELETE ERROR: Error deleting news article:", error);
-        // Toast message đã được xử lý trong apiClient.js
       }
     }
   );
@@ -121,57 +113,47 @@ const NewsManagement = () => {
       console.log("DEBUG MUTATION START: newsData received:", newsData);
       console.log("DEBUG MUTATION START: file received:", file);
 
-      // 1. Call API to create the news article first
       const createdNewsResponse = await newsService.createNews(newsData);
-      // Lấy ID từ response của newsService.createNews.
-      // createdNewsResponse có thể là { id: ..., ... } HOẶC { data: { id: ..., ... } }
       const newsId = createdNewsResponse?.id ?? createdNewsResponse?.data?.id;
 
       console.log("DEBUG MUTATION: News created with ID:", newsId);
 
-      // 2. If there is a file, proceed with uploading it
       if (file) {
         if (!newsId) {
             console.error("DEBUG MUTATION ERROR: News ID is missing after creation, cannot upload attachment.");
-            // Ném lỗi để trigger onError handler của mutation
             throw new Error("News ID not found after creation. Failed to upload attachment.");
         }
         console.log(`DEBUG MUTATION: Attempting to upload file '${file.name}' for news ID: ${newsId}`);
-        // Gọi newsService.uploadNewsAttachments với 1 file
         await newsService.uploadNewsAttachments(newsId, file);
         console.log("DEBUG MUTATION: Attachment uploaded successfully.");
       } else {
         console.log("DEBUG MUTATION: No file selected to upload, skipping attachment API call.");
       }
-      return createdNewsResponse; // Trả về response từ việc tạo tin tức
+      return createdNewsResponse;
     },
     {
       onSuccess: () => {
         toast.success('News article created successfully' + (selectedFile ? ' and attachment uploaded!' : '!'));
-        queryClient.invalidateQueries('admin-news'); // Refetch news list to show the new article
-        setShowCreateModal(false); // Close modal
-        resetForm(); // Reset form fields
+        queryClient.invalidateQueries('admin-news'); 
+        setShowCreateModal(false); 
+        resetForm();
       },
       onError: (error) => {
         console.error("DEBUG MUTATION ERROR: Error in createNewsMutation:", error);
-        // Toast message đã được xử lý trong apiClient.js.
-        // Bạn có thể thêm các thông báo cụ thể hơn nếu muốn, ví dụ:
+
         if (error.message && error.message.includes("News ID not found")) {
             toast.error('Lỗi: Không thể tạo tin tức hoặc lấy ID để tải ảnh lên. Vui lòng thử lại.');
         } else {
-            // Không cần toast thêm nếu apiClient đã xử lý
-            // toast.error('Failed to create news article or upload attachments. Please try again.', { id: 'create-news-error' });
         }
       }
     }
   );
 
-  // --- Event Handlers ---
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setPage(1); // Reset page to 1 on new search
-    queryClient.invalidateQueries('admin-news'); // Trigger refetch with new search term
+    setPage(1); 
+    queryClient.invalidateQueries('admin-news');
   };
 
   const handleDeleteNews = (newsId) => {
@@ -186,17 +168,14 @@ const NewsManagement = () => {
   };
 
   const handleFileChange = (e) => {
-    // Chỉ lấy file đầu tiên, vì chúng ta chỉ hỗ trợ 1 file như Angular cũ
     const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
     setSelectedFile(file);
-    // DEBUG: Log file ngay lập tức sau khi được chọn
     console.log("DEBUG HANDLEFILECHANGE: File selected:", file);
   };
 
   const handleCreateNews = (e) => {
     e.preventDefault();
 
-    // Frontend validation
     if (!newsForm.name || newsForm.name.trim() === '') {
         toast.error('Tên tin tức không được để trống.');
         return;
@@ -206,15 +185,12 @@ const NewsManagement = () => {
         return;
     }
 
-    // DEBUG: Log form state and selected file before initiating the mutation
     console.log("DEBUG HANDLECREATE: newsForm state before calling mutate:", newsForm);
     console.log("DEBUG HANDLECREATE: selectedFile state before calling mutate:", selectedFile);
 
-    // Call the mutation to create news and potentially upload attachments
     createNewsMutation.mutate({ newsData: newsForm, file: selectedFile });
   };
 
-  // Helper function to reset form states
   const resetForm = () => {
     setNewsForm({
       name: '',
@@ -222,20 +198,16 @@ const NewsManagement = () => {
       content: ''
     });
     setSelectedFile(null);
-    // Reset the native file input element
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // --- Effect for Modal Cleanup ---
   useEffect(() => {
-    if (!showCreateModal) { // When the create modal is closed
-      resetForm(); // Clear form state and selected file
+    if (!showCreateModal) { 
+      resetForm(); 
     }
-  }, [showCreateModal]); // Re-run this effect when showCreateModal changes
-
-  // --- UI Rendering ---
+  }, [showCreateModal]); 
 
   if (error) {
     return (
