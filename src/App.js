@@ -21,6 +21,13 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPanel from './pages/AdminPanel';
 
+import HelpCenter from './pages/HelpCenter';
+import ContactUs from './pages/ContactUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import AboutUs from './pages/AboutUs'; // Đảm bảo đã import
+
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -87,6 +94,14 @@ function App() {
         <Route path="tournaments/:id" element={<TournamentDetailPage />} />
         <Route path="news" element={<NewsPage />} />
         <Route path="news/:id" element={<NewsDetailPage />} />
+
+         {/* Các route cho trang tĩnh */}
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/about" element={<AboutUs />} />
+          
       </Route>
 
       {/* Auth Routes */}
