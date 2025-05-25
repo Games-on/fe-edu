@@ -16,7 +16,7 @@ const TournamentsPage = () => {
     ['tournaments', { page, searchTerm, status: statusFilter, sortBy }],
     () => tournamentService.getAllTournaments({
       page,
-      size: 12,
+      limit: 12,
       search: searchTerm,
       status: statusFilter,
       sortBy,
@@ -24,6 +24,36 @@ const TournamentsPage = () => {
     {
       staleTime: 5 * 60 * 1000,
       keepPreviousData: true,
+      select: (response) => {
+        console.log('Tournaments Page Response:', response);
+        // Handle different response formats
+        let data = [];
+        let pagination = {
+          currentPage: page,
+          totalPages: 1,
+          totalItems: 0,
+          hasNext: false,
+          hasPrev: false
+        };
+
+        if (Array.isArray(response)) {
+          data = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          data = response.data;
+          pagination = response.pagination || pagination;
+        } else if (response?.data?.content && Array.isArray(response.data.content)) {
+          data = response.data.content;
+          pagination = response.data.pagination || pagination;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+          data = response.data.data;
+          pagination = response.pagination || pagination;
+        }
+
+        return {
+          data,
+          pagination
+        };
+      }
     }
   );
 
@@ -125,7 +155,7 @@ const TournamentsPage = () => {
         {/* Tournament Grid */}
         {isLoading ? (
           <LoadingSpinner />
-        ) : tournaments?.data?.content?.length === 0 ? (
+        ) : tournaments?.data?.length === 0 ? (
           <div className="text-center py-12">
             <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-gray-900 mb-2">No tournaments found</h3>
@@ -134,7 +164,7 @@ const TournamentsPage = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {tournaments?.data?.content?.map((tournament) => (
+              {tournaments?.data?.map((tournament) => (
                 <div key={tournament.id} className="card hover:shadow-lg transition-shadow duration-300">
                   <div className="relative mb-4">
                     <div className="bg-gradient-to-r from-primary-500 to-sports-purple h-48 rounded-lg flex items-center justify-center">
@@ -191,7 +221,7 @@ const TournamentsPage = () => {
             </div>
 
             {/* Pagination */}
-            {tournaments?.data?.totalPages > 1 && (
+            {tournaments?.pagination?.totalPages > 1 && (
               <div className="flex justify-center items-center space-x-2">
                 <button
                   onClick={() => setPage(page - 1)}
@@ -202,12 +232,12 @@ const TournamentsPage = () => {
                 </button>
                 
                 <span className="text-gray-600">
-                  Page {page} of {tournaments.data.totalPages}
+                  Page {page} of {tournaments.pagination.totalPages}
                 </span>
                 
                 <button
                   onClick={() => setPage(page + 1)}
-                  disabled={page >= tournaments.data.totalPages}
+                  disabled={page >= tournaments.pagination.totalPages}
                   className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next

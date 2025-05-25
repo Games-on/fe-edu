@@ -161,8 +161,11 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'AUTH_START' });
     try {
       const response = await authService.register(userData);
+      console.log('✅ Registration successful:', response);
+      dispatch({ type: 'SET_LOADING', payload: false });
       return response;
     } catch (error) {
+      console.error('❌ Registration failed:', error);
       dispatch({ type: 'AUTH_FAILURE', payload: error.response?.data?.message || error.message });
       throw error;
     }

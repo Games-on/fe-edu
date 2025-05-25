@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { 
@@ -15,14 +15,54 @@ import { useAuth } from '../context/AuthContext';
 import { tournamentService, teamService } from '../services';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
+import TeamCreateModal from '../components/team/TeamCreateModal';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
 
   // Fetch user's tournaments (if organizer/admin) or registered teams
   const { data: tournaments, isLoading: tournamentsLoading } = useQuery(
     'user-tournaments',
-    () => tournamentService.getAllTournaments({ page: 1, size: 5 }),
+    () => tournamentService.getAllTournaments({ page: 1, limit: 5 }),
+    { 
+      staleTime: 5 * 60 * 1000,
+      select: (response) => {
+        console.log('Dashboard Tournaments Response:', response);
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          return response;
+        }
+        if (response?.data && Array.isArray(response.data)) {
+          return response.data;
+        }
+        if (response?.data?.content && Array.isArray(response.data.content)) {
+          return response.data.content;
+        }
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        return [];
+      }
+    }
+  );
+
+  // Fetch user stats
+  const { data: userStats, isLoading: statsLoading } = useQuery(
+    'user-stats',
+    async () => {
+      // Get tournaments count
+      const tournamentsResponse = await tournamentService.getAllTournaments({ page: 1, limit: 1 });
+      const totalTournaments = tournamentsResponse?.pagination?.totalItems || 0;
+      
+      // Mock data for other stats (would be replaced with real API calls)
+      return {
+        totalTournaments,
+        registeredTeams: 12, // Would come from user teams API
+        matchesPlayed: 45,    // Would come from user matches API
+        winRate: '78%'        // Would be calculated from match results
+      };
+    },
     { staleTime: 5 * 60 * 1000 }
   );
 
@@ -31,28 +71,28 @@ const DashboardPage = () => {
   const stats = [
     {
       name: 'Active Tournaments',
-      value: tournaments?.data?.totalElements || 0,
+      value: userStats?.totalTournaments || 0,
       icon: Trophy,
       color: 'text-sports-orange',
       bgColor: 'bg-orange-100',
     },
     {
       name: 'Registered Teams',
-      value: '12',
+      value: userStats?.registeredTeams || 0,
       icon: Users,
       color: 'text-sports-green',
       bgColor: 'bg-green-100',
     },
     {
       name: 'Matches Played',
-      value: '45',
+      value: userStats?.matchesPlayed || 0,
       icon: Calendar,
       color: 'text-sports-purple',
       bgColor: 'bg-purple-100',
     },
     {
       name: 'Win Rate',
-      value: '78%',
+      value: userStats?.winRate || '0%',
       icon: TrendingUp,
       color: 'text-sports-pink',
       bgColor: 'bg-pink-100',
@@ -118,7 +158,7 @@ const DashboardPage = () => {
 
             {tournamentsLoading ? (
               <LoadingSpinner size="small" />
-            ) : tournaments?.data?.content?.length === 0 ? (
+            ) : (tournaments || []).length === 0 ? (
               <div className="text-center py-8">
                 <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-600">No tournaments found</p>
@@ -134,7 +174,7 @@ const DashboardPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {tournaments?.data?.content?.slice(0, 5).map((tournament) => (
+                {(tournaments || []).slice(0, 5).map((tournament) => (
                   <div key={tournament.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="bg-primary-600 p-2 rounded-lg">
@@ -260,14 +300,14 @@ const DashboardPage = () => {
                 <p className="text-gray-600">Start organizing your own tournament</p>
               </Link>
             ) : (
-              <Link
-                to="/teams/create"
-                className="card hover:shadow-lg transition-shadow duration-300 text-center"
+              <button
+                onClick={() => setIsTeamCreateModalOpen(true)}
+                className="card hover:shadow-lg transition-shadow duration-300 text-center w-full"
               >
                 <Users className="h-12 w-12 text-sports-green mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Create Team</h3>
                 <p className="text-gray-600">Form a team and compete</p>
-              </Link>
+              </button>
             )}
 
             <Link
@@ -281,6 +321,12 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Team Create Modal */}
+      <TeamCreateModal
+        isOpen={isTeamCreateModalOpen}
+        onClose={() => setIsTeamCreateModalOpen(false)}
+      />
     </div>
   );
 };

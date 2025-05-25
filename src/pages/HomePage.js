@@ -8,9 +8,30 @@ import { formatDate, getStatusColor } from '../utils/helpers';
 
 const HomePage = () => {
   const { data: tournaments, isLoading: tournamentsLoading } = useQuery(
-    ['tournaments', { page: 1, size: 3 }],
-    () => tournamentService.getAllTournaments({ page: 1, size: 3 }),
-    { staleTime: 5 * 60 * 1000 }
+    ['tournaments', { page: 1, limit: 3 }],
+    () => tournamentService.getAllTournaments({ page: 1, limit: 3 }),
+    { 
+      staleTime: 5 * 60 * 1000,
+      select: (response) => {
+        console.log('Tournaments API Response:', response);
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          return response;
+        }
+        if (response?.data && Array.isArray(response.data)) {
+          return response.data;
+        }
+        if (response?.data?.content && Array.isArray(response.data.content)) {
+          return response.data.content;
+        }
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        // Fallback to empty array
+        console.warn('Tournaments data is not an array:', response);
+        return [];
+      }
+    }
   );
 
   const { data: news, isLoading: newsLoading } = useQuery(
@@ -18,7 +39,20 @@ const HomePage = () => {
     () => newsService.getAllNews(),
     { 
       staleTime: 5 * 60 * 1000,
-      select: (data) => data.slice(0, 3) // Take only first 3 news items
+      select: (data) => {
+        console.log('News API Response:', data);
+        // Handle different response formats
+        let newsArray = [];
+        if (Array.isArray(data)) {
+          newsArray = data;
+        } else if (data?.data && Array.isArray(data.data)) {
+          newsArray = data.data;
+        } else {
+          console.warn('News data is not an array:', data);
+          newsArray = [];
+        }
+        return newsArray.slice(0, 3); // Take only first 3 news items
+      }
     }
   );
 
@@ -158,7 +192,7 @@ const HomePage = () => {
             <LoadingSpinner />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {tournaments?.data?.content?.slice(0, 3).map((tournament) => (
+              {(tournaments || []).slice(0, 3).map((tournament) => (
                 <div key={tournament.id} className="card hover:shadow-lg transition-shadow duration-300">
                   <div className="relative mb-4">
                     <div className="bg-gradient-to-r from-primary-500 to-sports-purple h-40 rounded-lg flex items-center justify-center">
@@ -211,7 +245,7 @@ const HomePage = () => {
             <LoadingSpinner />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {news?.map((article) => (
+              {(news || []).map((article) => (
                 <div key={article.id} className="card hover:shadow-lg transition-shadow duration-300">
                   <div className="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center">
                     <Star className="h-16 w-16 text-white" />
