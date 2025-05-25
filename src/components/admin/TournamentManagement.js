@@ -13,26 +13,48 @@ import {
   MapPin,
   Play,
   Pause,
-  AlertTriangle
+  AlertTriangle,
+  Bug
 } from 'lucide-react';
-import { tournamentService } from '../../services';
+import { tournamentServiceFixed as tournamentService } from '../../services/tournamentServiceFixed';
 import LoadingSpinner from '../LoadingSpinner';
 import TournamentCreateForm from '../tournament/TournamentCreateForm';
+import TournamentDebugPanel from '../tournament/TournamentDebugPanel';
 import { 
   formatDate, 
   getStatusColor, 
   getSportTypeLabel,
   getTournamentStatusLabel 
 } from '../../utils/helpers';
+import TournamentAPITester from '../debug/TournamentAPITester';
 import { QUERY_KEYS } from '../../utils/constants';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast'; // DISABLED - causes DOM manipulation issues
 
 const TournamentManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const queryClient = useQueryClient();
+
+  // Safe notification system - no DOM manipulation
+  const showNotification = (type, message) => {
+    console.log(`${type.toUpperCase()}: ${message}`);
+    const notification = { id: Date.now(), type, message };
+    setNotifications(prev => [...prev, notification]);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 3000);
+    
+    // Also show native alert for important messages
+    if (type === 'error') {
+      alert(`❌ ${message}`);
+    }
+  };
 
   const { data: tournaments, isLoading, error } = useQuery(
     [QUERY_KEYS.TOURNAMENTS, { page, searchTerm, status: statusFilter }],
@@ -46,20 +68,69 @@ const TournamentManagement = () => {
       staleTime: 5 * 60 * 1000,
       keepPreviousData: true,
       select: (response) => {
-        // Handle different response formats from backend
-        if (response?.success && response?.data) {
+        console.log('🔍 [TournamentManagement] Raw API response:', response);
+        
+        // XỬ LÝ CÁC TRƯỜNG HỢP RESPONSE KHÁC NHAU
+        
+        // Trường hợp 1: Response theo format chuẩn từ backend
+        if (response && response.data && Array.isArray(response.data)) {
           return {
             data: response.data,
             pagination: response.pagination || {
+              currentPage: response.page || page,
+              totalPages: response.totalPages || 1,
+              totalItems: response.total || response.data.length,
+              hasNext: (response.page || page) < (response.totalPages || 1),
+              hasPrev: (response.page || page) > 1
+            }
+          };
+        }
+        
+        // Trường hợp 2: Response là array trực tiếp (có thể do response interceptor)
+        if (Array.isArray(response)) {
+          return {
+            data: response,
+            pagination: {
               currentPage: page,
               totalPages: 1,
-              totalItems: response.data?.length || 0,
+              totalItems: response.length,
               hasNext: false,
               hasPrev: false
             }
           };
         }
-        return response;
+        
+        // Trường hợp 3: Response có format khác (success wrapper)
+        if (response && response.success && response.data) {
+          if (Array.isArray(response.data)) {
+            return {
+              data: response.data,
+              pagination: {
+                currentPage: page,
+                totalPages: 1,
+                totalItems: response.data.length,
+                hasNext: false,
+                hasPrev: false
+              }
+            };
+          }
+        }
+        
+        // Trường hợp 4: Fallback - empty state
+        console.warn('⚠️ [TournamentManagement] Unexpected response format, returning empty state');
+        return {
+          data: [],
+          pagination: {
+            currentPage: page,
+            totalPages: 1,
+            totalItems: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        };
+      },
+      onError: (error) => {
+        console.error('❌ [TournamentManagement] Query error:', error);
       }
     }
   );
@@ -68,11 +139,11 @@ const TournamentManagement = () => {
     (tournamentId) => tournamentService.deleteTournament(tournamentId),
     {
       onSuccess: () => {
-        toast.success('Xóa giải đấu thành công');
+        showNotification('success', 'Xóa giải đấu thành công');
         queryClient.invalidateQueries(QUERY_KEYS.TOURNAMENTS);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to delete tournament');
+        showNotification('error', error.response?.data?.message || 'Failed to delete tournament');
       }
     }
   );
@@ -81,11 +152,11 @@ const TournamentManagement = () => {
     (tournamentId) => tournamentService.startTournament(tournamentId),
     {
       onSuccess: () => {
-        toast.success('Bắt đầu giải đấu thành công');
+        showNotification('success', 'Bắt đầu giải đấu thành công');
         queryClient.invalidateQueries(QUERY_KEYS.TOURNAMENTS);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to start tournament');
+        showNotification('error', error.response?.data?.message || 'Failed to start tournament');
       }
     }
   );
@@ -109,11 +180,12 @@ const TournamentManagement = () => {
 
   const handleCreateSuccess = (newTournament) => {
     console.log('Tournament created successfully:', newTournament);
-    // Query will be automatically invalidated by the mutation
+    queryClient.invalidateQueries(QUERY_KEYS.TOURNAMENTS);
   };
 
   const getStatusAction = (tournament) => {
     switch (tournament.status) {
+      case 'REGISTRATION':
       case 'REGISTRATION_OPEN':
         return (
           <button
@@ -125,6 +197,7 @@ const TournamentManagement = () => {
             <Play className="h-4 w-4" />
           </button>
         );
+      case 'ONGOING':
       case 'IN_PROGRESS':
         return (
           <button
@@ -139,17 +212,63 @@ const TournamentManagement = () => {
     }
   };
 
+  // Render error state
   if (error) {
+    console.error('🚫 [TournamentManagement] Component error:', error);
     return (
       <div className="text-center py-8">
         <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <p className="text-red-600">Error loading tournaments. Please try again later.</p>
+        <p className="text-red-600 mb-4">Error loading tournaments: {error.message}</p>
+        <button 
+          onClick={() => queryClient.invalidateQueries(QUERY_KEYS.TOURNAMENTS)}
+          className="btn-primary"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
+  // KIỂM TRA DỮ LIỆU TRƯỚC KHI RENDER
+  const tournamentData = tournaments?.data || [];
+  const pagination = tournaments?.pagination || {
+    currentPage: page,
+    totalPages: 1,
+    totalItems: 0,
+    hasNext: false,
+    hasPrev: false
+  };
+
+  console.log('📊 [TournamentManagement] Render data:', {
+    tournamentData,
+    pagination,
+    isArray: Array.isArray(tournamentData),
+    length: tournamentData.length
+  });
+
   return (
     <div className="space-y-6">
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`px-4 py-3 rounded-md shadow-lg ${
+                notification.type === 'success'
+                  ? 'bg-green-100 border border-green-200 text-green-800'
+                  : 'bg-red-100 border border-red-200 text-red-800'
+              }`}
+            >
+              <div className="flex items-center">
+                <span className="text-sm font-medium">
+                  {notification.type === 'success' ? '✓' : '❌'} {notification.message}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -158,8 +277,15 @@ const TournamentManagement = () => {
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-            {tournaments?.pagination?.totalItems || 0} Tournaments
+            {pagination.totalItems} Tournaments
           </div>
+          <button 
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
+            className="btn-secondary"
+            title="Toggle Debug Panel"
+          >
+            <Bug className="h-4 w-4" />
+          </button>
           <button 
             onClick={() => setShowCreateModal(true)}
             className="btn-primary"
@@ -194,8 +320,10 @@ const TournamentManagement = () => {
             >
               <option value="">All Status</option>
               <option value="DRAFT">Draft</option>
+              <option value="REGISTRATION">Registration</option>
               <option value="REGISTRATION_OPEN">Registration Open</option>
               <option value="REGISTRATION_CLOSED">Registration Closed</option>
+              <option value="ONGOING">Ongoing</option>
               <option value="IN_PROGRESS">In Progress</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
@@ -212,13 +340,51 @@ const TournamentManagement = () => {
         </form>
       </div>
 
+      {/* API Tester - for debugging */}
+      {showDebugPanel && (
+        <div className="mb-6">
+          <TournamentAPITester />
+        </div>
+      )}
+
+      {/* Debug Info Panel (ẩn theo mặc định) */}
+      {showDebugPanel && (
+        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-800 mb-2">🐛 Debug Information</h3>
+          <pre className="text-xs text-gray-600 whitespace-pre-wrap">
+            {JSON.stringify({
+              tournaments: tournaments,
+              tournamentData: tournamentData,
+              pagination: pagination,
+              isArray: Array.isArray(tournamentData),
+              length: tournamentData.length,
+              searchTerm,
+              statusFilter,
+              page
+            }, null, 2)}
+          </pre>
+        </div>
+      )}
+
       {/* Tournaments Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center">
             <LoadingSpinner />
           </div>
-        ) : tournaments?.data?.length === 0 ? (
+        ) : !Array.isArray(tournamentData) ? (
+          <div className="p-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <p className="text-red-600 mb-2">Data format error: tournaments data is not an array</p>
+            <p className="text-sm text-gray-500">Expected: Array, Received: {typeof tournamentData}</p>
+            <button 
+              onClick={() => setShowDebugPanel(true)}
+              className="mt-4 btn-secondary"
+            >
+              Show Debug Info
+            </button>
+          </div>
+        ) : tournamentData.length === 0 ? (
           <div className="p-8 text-center">
             <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No tournaments found</p>
@@ -256,7 +422,7 @@ const TournamentManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {tournaments?.data?.map((tournament) => (
+                {tournamentData.map((tournament) => (
                   <tr key={tournament.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -338,23 +504,23 @@ const TournamentManagement = () => {
         )}
 
         {/* Pagination */}
-        {tournaments?.pagination?.totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing page {tournaments.pagination.currentPage} of {tournaments.pagination.totalPages}
+                Showing page {pagination.currentPage} of {pagination.totalPages}
               </div>
               <div className="flex space-x-2">
                 <button
                   onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
+                  disabled={!pagination.hasPrev}
                   className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(page + 1)}
-                  disabled={page >= tournaments.pagination.totalPages}
+                  disabled={!pagination.hasNext}
                   className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
@@ -371,6 +537,9 @@ const TournamentManagement = () => {
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
       />
+      
+      {/* Debug Panel */}
+      {showDebugPanel && <TournamentDebugPanel />}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Trophy, Users, Calendar, MapPin } from 'lucide-react';
-import { tournamentService } from '../services';
+import { tournamentServiceFixed as tournamentService } from '../services/tournamentServiceFixed';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
@@ -25,8 +25,24 @@ const TournamentsPage = () => {
       staleTime: 5 * 60 * 1000,
       keepPreviousData: true,
       select: (response) => {
-        console.log('Tournaments Page Response:', response);
-        // Handle different response formats
+        console.log('🏆 [TournamentsPage] Tournament API Response:', response);
+        
+        // tournamentServiceFixed already handles the response format and returns { data: [...], pagination: {...} }
+        if (response && response.data && Array.isArray(response.data)) {
+          console.log('🏆 [TournamentsPage] Found tournaments:', response.data.length);
+          return {
+            data: response.data,
+            pagination: response.pagination || {
+              currentPage: page,
+              totalPages: 1,
+              totalItems: response.data.length,
+              hasNext: false,
+              hasPrev: false
+            }
+          };
+        }
+        
+        // Fallback handling for other formats
         let data = [];
         let pagination = {
           currentPage: page,
@@ -44,11 +60,13 @@ const TournamentsPage = () => {
         } else if (response?.data?.content && Array.isArray(response.data.content)) {
           data = response.data.content;
           pagination = response.data.pagination || pagination;
-        } else if (response?.data?.data && Array.isArray(response.data.data)) {
-          data = response.data.data;
-          pagination = response.pagination || pagination;
+        } else if (response?.data?.tournaments && Array.isArray(response.data.tournaments)) {
+          data = response.data.tournaments;
+          pagination = response.data.pagination || pagination;
         }
 
+        console.log('🏆 [TournamentsPage] Processed data:', { data: data.length, pagination });
+        
         return {
           data,
           pagination

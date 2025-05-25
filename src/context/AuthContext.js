@@ -63,28 +63,60 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
+      // Validate token format first
+      if (typeof token !== 'string' || token.length < 10) {
+        console.log('❌ Invalid token format, removing');
+        localStorage.removeItem('accessToken');
+        dispatch({ type: 'AUTH_FAILURE', payload: 'Invalid token format' });
+        return;
+      }
+
       const response = await authService.getAccount();
       console.log('Account response:', response);
       
-      // Backend returns: { success: true, message: "...", data: { id, email, name, role } }
+      // Handle both wrapped and unwrapped response formats
+      let userData = null;
+      
       if (response && response.success && response.data) {
-        console.log('✅ Auth check successful, user data:', response.data);
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: { user: response.data },
-        });
+        // Wrapped format: { success: true, data: { id, email, name, role } }
+        userData = response.data;
+        console.log('✅ Wrapped format detected, user data:', userData);
+      } else if (response && response.id && response.email) {
+        // Direct format: { id, email, name, role } (already unwrapped by API client)
+        userData = response;
+        console.log('✅ Direct format detected, user data:', userData);
       } else {
         console.log('❌ Invalid response format:', response);
         localStorage.removeItem('accessToken');
         dispatch({ type: 'AUTH_FAILURE', payload: 'Invalid token response' });
+        return;
       }
+      
+      // Additional validation for user data
+      if (!userData.id || !userData.email) {
+        console.log('❌ Incomplete user data, removing token');
+        localStorage.removeItem('accessToken');
+        dispatch({ type: 'AUTH_FAILURE', payload: 'Incomplete user data' });
+        return;
+      }
+      
+      console.log('✅ Auth check successful, user data:', userData);
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: userData },
+      });
     } catch (error) {
       console.log('❌ Auth check failed:', error);
-      // Don't remove token immediately, might be network issue
-      if (error.response?.status === 401) {
-        console.log('401 error, removing token');
+      
+      // Clear token for any authentication errors
+      if (error.response?.status === 401 || 
+          error.response?.status === 403 ||
+          error.message?.includes('token') ||
+          error.message?.includes('unauthorized')) {
+        console.log('Authentication error, removing token');
         localStorage.removeItem('accessToken');
       }
+      
       dispatch({ type: 'AUTH_FAILURE', payload: error.message });
     }
   };
@@ -178,7 +210,20 @@ export const AuthProvider = ({ children }) => {
       // Continue with logout even if API call fails
       console.error('Logout error:', error);
     } finally {
+      // Complete cleanup
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
+      
+      // Clear any other auth-related data
+      const authKeys = ['token', 'auth', 'session', 'login'];
+      Object.keys(localStorage).forEach(key => {
+        if (authKeys.some(authKey => key.toLowerCase().includes(authKey))) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      console.log('✅ Complete logout and localStorage cleanup');
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   };

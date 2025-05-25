@@ -44,54 +44,101 @@ export const authService = {
 export const tournamentService = {
   // Get all tournaments
   getAllTournaments: async (params = {}) => {
-    const response = await apiClient.get('/api/tournaments', { params });
-    
-    // Backend returns PaginatedResponseDTO format
-    // Transform to expected frontend format
-    if (response.data && response.data.data) {
-      return {
-        data: response.data.data,
-        pagination: response.data.pagination || {
-          currentPage: params.page || 1,
-          totalPages: Math.ceil((response.data.data?.length || 0) / (params.limit || 10)),
-          totalItems: response.data.data?.length || 0,
-          hasNext: false,
-          hasPrev: false
-        }
-      };
+    console.log('🏟️ [TournamentService] Getting all tournaments with params:', params);
+    try {
+      const response = await apiClient.get('/api/tournaments', { params });
+      console.log('✅ [TournamentService] Get all tournaments success:', response);
+      
+      // Backend returns PaginatedResponseDTO format
+      // Transform to expected frontend format
+      if (response && response.data) {
+        return {
+          data: response.data,
+          pagination: response.pagination || {
+            currentPage: params.page || 1,
+            totalPages: Math.ceil((response.data?.length || 0) / (params.limit || 10)),
+            totalItems: response.data?.length || 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Get all tournaments failed:', error);
+      throw error;
     }
-    
-    return response.data;
   },
 
   // Get tournament by ID
   getTournamentById: async (id) => {
-    const response = await apiClient.get(`/api/tournaments/${id}`);
-    return response.data;
+    console.log('🏟️ [TournamentService] Getting tournament by ID:', id);
+    try {
+      const response = await apiClient.get(`/api/tournaments/${id}`);
+      console.log('✅ [TournamentService] Get tournament by ID success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Get tournament by ID failed:', error);
+      throw error;
+    }
   },
 
   // Create tournament
   createTournament: async (tournamentData) => {
-    const response = await apiClient.post('/api/tournaments', tournamentData);
-    return response.data;
+    console.log('🏟️ [TournamentService] Creating tournament with data:', tournamentData);
+    try {
+      const response = await apiClient.post('/api/tournaments', tournamentData);
+      console.log('✅ [TournamentService] Create tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Create tournament failed:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      throw error;
+    }
   },
 
   // Update tournament
   updateTournament: async (id, tournamentData) => {
-    const response = await apiClient.put(`/api/tournaments/${id}`, tournamentData);
-    return response.data;
+    console.log('🏟️ [TournamentService] Updating tournament:', id, tournamentData);
+    try {
+      const response = await apiClient.put(`/api/tournaments/${id}`, tournamentData);
+      console.log('✅ [TournamentService] Update tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Update tournament failed:', error);
+      throw error;
+    }
   },
 
   // Delete tournament
   deleteTournament: async (id) => {
-    const response = await apiClient.delete(`/api/tournaments/${id}`);
-    return response.data;
+    console.log('🏟️ [TournamentService] Deleting tournament:', id);
+    try {
+      const response = await apiClient.delete(`/api/tournaments/${id}`);
+      console.log('✅ [TournamentService] Delete tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Delete tournament failed:', error);
+      throw error;
+    }
   },
 
   // Start tournament
   startTournament: async (id) => {
-    const response = await apiClient.post(`/api/tournaments/${id}/start`);
-    return response.data;
+    console.log('🏟️ [TournamentService] Starting tournament:', id);
+    try {
+      const response = await apiClient.post(`/api/tournaments/${id}/start`);
+      console.log('✅ [TournamentService] Start tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Start tournament failed:', error);
+      throw error;
+    }
   },
 };
 

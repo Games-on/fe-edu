@@ -1,126 +1,90 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
-      errorInfo: null,
-      eventId: null
-    };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
+    // Update state to show fallback UI
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error
-    console.error('Error Boundary caught an error:', error, errorInfo);
+    // Log error details
+    console.error('🚫 ErrorBoundary caught an error:', error);
+    console.error('Error info:', errorInfo);
     
     this.setState({
-      error,
-      errorInfo
+      error: error,
+      errorInfo: errorInfo
     });
-
-    // You can also log the error to an error reporting service here
-    if (process.env.NODE_ENV === 'production') {
-      // Example: Sentry.captureException(error);
-      this.logErrorToService(error, errorInfo);
+    
+    // Prevent DOM manipulation errors from propagating
+    if (error.message && (
+      error.message.includes('insertBefore') ||
+      error.message.includes('appendChild') ||
+      error.message.includes('removeChild') ||
+      error.message.includes('Cannot deserialize') ||
+      error.message.includes('JSON parse error')
+    )) {
+      console.warn('🔧 DOM/Parse error caught and contained:', error.message);
+      // Stop error propagation
+      return;
     }
   }
 
-  logErrorToService = (error, errorInfo) => {
-    // Log to external service in production
-    const errorData = {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    };
-    
-    // Send to logging service (replace with your preferred service)
-    console.error('Production Error:', errorData);
-  };
-
-  handleReload = () => {
-    window.location.reload();
-  };
-
-  handleGoHome = () => {
-    window.location.href = '/';
-  };
-
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
+      // Fallback UI
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
-            <div className="mb-6">
-              <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Oops! Co loi xay ra
-              </h1>
-              <p className="text-gray-600">
-                Da xay ra loi khong mong muon. Chung toi da ghi nhan va se khac phuc som nhat.
-              </p>
-            </div>
-
-            {/* Error details in development */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="mb-6 p-4 bg-red-50 rounded-lg text-left">
-                <h3 className="text-sm font-medium text-red-800 mb-2">Error Details:</h3>
-                <div className="text-xs text-red-700 font-mono overflow-auto max-h-32">
-                  <div className="mb-2">
-                    <strong>Message:</strong> {this.state.error.message}
-                  </div>
-                  {this.state.error.stack && (
-                    <div>
-                      <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap mt-1">
-                        {this.state.error.stack}
-                      </pre>
-                    </div>
-                  )}
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
               </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={this.handleReload}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span>Tai lai trang</span>
-              </button>
-              <button
-                onClick={this.handleGoHome}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-              >
-                <Home className="h-4 w-4" />
-                <span>Ve trang chu</span>
-              </button>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Đã xảy ra lỗi
+                </h3>
+              </div>
             </div>
-
-            {/* Support contact */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            
+            <div className="mb-4">
               <p className="text-sm text-gray-500">
-                Neu loi van tiep tuc, vui long lien he{' '}
-                <a 
-                  href="mailto:support@edusports.com" 
-                  className="text-primary-600 hover:text-primary-700"
-                >
-                  support@edusports.com
-                </a>
+                Ứng dụng đã gặp lỗi không mong muốn. Vui lòng thử lại hoặc liên hệ hỗ trợ.
               </p>
             </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Tải lại trang
+              </button>
+              <button
+                onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Thử lại
+              </button>
+            </div>
+            
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-4">
+                <summary className="text-sm text-gray-500 cursor-pointer">Chi tiết lỗi (Development)</summary>
+                <pre className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded overflow-auto max-h-40">
+                  {this.state.error.toString()}
+                  <br />
+                  {this.state.errorInfo.componentStack}
+                </pre>
+              </details>
+            )}
           </div>
         </div>
       );
@@ -129,37 +93,5 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-// Higher-order component for functional components
-export const withErrorBoundary = (Component) => {
-  return function WrappedComponent(props) {
-    return (
-      <ErrorBoundary>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-};
-
-// Hook for error handling in functional components
-export const useErrorHandler = () => {
-  const handleError = React.useCallback((error, errorInfo) => {
-    console.error('Manual error report:', error, errorInfo);
-    
-    // You can also trigger error boundary here by throwing
-    // Or report to external service
-    if (process.env.NODE_ENV === 'production') {
-      // Report to error service
-      console.error('Production Error via Hook:', {
-        message: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-        url: window.location.href
-      });
-    }
-  }, []);
-
-  return { handleError };
-};
 
 export default ErrorBoundary;

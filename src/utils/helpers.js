@@ -31,8 +31,45 @@ export const formatDateForInput = (dateString) => {
   return formatDate(dateString, DATE_FORMATS.INPUT);
 };
 
-export const formatDateTimeForInput = (dateString) => {
-  return formatDate(dateString, DATE_FORMATS.INPUT_WITH_TIME);
+export const formatDateTimeForInput = (date) => {
+  if (!date) return '';
+  
+  try {
+    let dateObj;
+    
+    // Handle different date formats
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'string') {
+      // Handle ISO string with timezone info
+      if (date.includes('T') && date.includes('Z')) {
+        dateObj = new Date(date);
+      } else {
+        // Try to parse as ISO
+        dateObj = parseISO(date);
+      }
+    } else {
+      dateObj = new Date(date);
+    }
+    
+    // Check if date is valid
+    if (!dateObj || isNaN(dateObj.getTime()) || !isValid(dateObj)) {
+      console.warn('Invalid date for input formatting:', date);
+      return '';
+    }
+    
+    // Format to YYYY-MM-DDTHH:MM format for datetime-local input
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch (error) {
+    console.warn('DateTime formatting error:', error, 'for date:', date);
+    return '';
+  }
 };
 
 export const getTimeUntil = (dateString) => {

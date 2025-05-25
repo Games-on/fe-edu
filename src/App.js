@@ -5,7 +5,7 @@ import { useAuth } from './context/AuthContext';
 // Layout Components
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
-import SimpleErrorBoundary from './components/SimpleErrorBoundary';
+
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -43,8 +43,8 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Public Route Component (redirect if already authenticated)
-const PublicRoute = ({ children }) => {
+// Auth Only Route Component (redirect if already authenticated)
+const AuthOnlyRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
@@ -85,8 +85,7 @@ function App() {
   }
 
   return (
-    <SimpleErrorBoundary>
-      <Routes>
+    <Routes>
       {/* Public Routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
@@ -109,17 +108,17 @@ function App() {
       <Route 
         path="/login" 
         element={
-          <PublicRoute>
+          <AuthOnlyRoute>
             <LoginPage />
-          </PublicRoute>
+          </AuthOnlyRoute>
         } 
       />
       <Route 
         path="/register" 
         element={
-          <PublicRoute>
+          <AuthOnlyRoute>
             <RegisterPage />
-          </PublicRoute>
+          </AuthOnlyRoute>
         } 
       />
 
@@ -151,7 +150,6 @@ function App() {
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </SimpleErrorBoundary>
   );
 }
 

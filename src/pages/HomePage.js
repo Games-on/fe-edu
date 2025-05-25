@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Trophy, Users, Calendar, Target, ArrowRight, Play, Star } from 'lucide-react';
-import { tournamentService, newsService } from '../services';
+import { tournamentServiceFixed as tournamentService } from '../services/tournamentServiceFixed';
+import { newsService } from '../services';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
@@ -13,8 +14,15 @@ const HomePage = () => {
     { 
       staleTime: 5 * 60 * 1000,
       select: (response) => {
-        console.log('Tournaments API Response:', response);
-        // Handle different response formats
+        console.log('🏆 [HomePage] Tournaments API Response:', response);
+        
+        // tournamentServiceFixed already handles the response format and returns { data: [...], pagination: {...} }
+        if (response && Array.isArray(response.data)) {
+          console.log('🏆 [HomePage] Found tournaments:', response.data.length);
+          return response.data;
+        }
+        
+        // Fallback for other formats
         if (Array.isArray(response)) {
           return response;
         }
@@ -24,11 +32,12 @@ const HomePage = () => {
         if (response?.data?.content && Array.isArray(response.data.content)) {
           return response.data.content;
         }
-        if (response?.data?.data && Array.isArray(response.data.data)) {
-          return response.data.data;
+        if (response?.data?.tournaments && Array.isArray(response.data.tournaments)) {
+          return response.data.tournaments;
         }
+        
         // Fallback to empty array
-        console.warn('Tournaments data is not an array:', response);
+        console.warn('⚠️ [HomePage] Tournaments data is not an array:', response);
         return [];
       }
     }
