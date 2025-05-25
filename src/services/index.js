@@ -209,7 +209,7 @@ export const newsService = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    
+
     const response = await apiClient.post(`/api/v1/news/uploads/${newsId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -226,24 +226,51 @@ export const newsService = {
 };
 
 // ==================== USER MANAGEMENT SERVICE ====================
-// Note: Backend doesn't have dedicated admin/user management endpoints
-// These would need to be implemented in backend
 export const userService = {
-  // Get current user profile (using auth account endpoint)
+  // Get all users
+  getAllUsers: async (params = {}) => {
+    const response = await apiClient.get('api/v1/users', { params });
+    return response.data;
+  },
+
+  // Get user by ID
+  getUserById: async (id) => {
+    const response = await apiClient.get(`api/v1/users/${id}`);
+    return response.data;
+  },
+
+  // Create user
+  createUser: async (userData) => {
+    const response = await apiClient.post('api/v1/users', userData);
+    return response.data;
+  },
+
+  // Update user
+  updateUser: async (id, userData) => {
+    const response = await apiClient.put(`api/v1/users/${id}`, userData);
+    return response.data;
+  },
+
+  // Delete user
+  deleteUser: async (id) => {
+    const response = await apiClient.delete(`api/v1/users/${id}`);
+    return response.data;
+  },
+
+  // Toggle user status (example - adjust based on your backend API)
+  toggleUserStatus: async (id, newStatus) => {
+    const response = await apiClient.patch(`api/v1/users/${id}/status`, { status: newStatus });
+    return response.data;
+  },
+  
+  // Get current user profile (using auth account endpoint) - giữ nguyên nếu cần
   getCurrentUser: async () => {
     return authService.getAccount();
   },
-
-  // Note: The following endpoints need to be implemented in backend
-  // getAllUsers: async (params = {}) => { /* Backend needs implementation */ },
-  // updateUser: async (userId, userData) => { /* Backend needs implementation */ },
-  // deleteUser: async (userId) => { /* Backend needs implementation */ },
-  // getUserById: async (userId) => { /* Backend needs implementation */ },
 };
 
 // ==================== SYSTEM/ADMIN SERVICE ====================
-// Note: Backend doesn't have system/admin endpoints
-// These would need to be implemented in backend
+// DI CHUYỂN PHẦN ĐỊNH NGHĨA NÀY LÊN TRÊN ĐỂ CÓ THỂ SỬ DỤNG
 export const systemService = {
   // Note: The following endpoints need to be implemented in backend
   // getSystemStats: async () => { /* Backend needs implementation */ },
@@ -252,11 +279,12 @@ export const systemService = {
 };
 
 // ==================== DEBUG SERVICE ====================
-// Note: Backend has DebugController but endpoints are not documented
+// DI CHUYỂN PHẦN ĐỊNH NGHĨA NÀY LÊN TRÊN ĐỂ CÓ THỂ SỬ DỤNG
 export const debugService = {
   // Note: Check backend DebugController for available endpoints
   // Backend implementation needed for proper debug endpoints
 };
+
 
 // ==================== EXPORT ALL SERVICES ====================
 export const apiServices = {
@@ -267,8 +295,8 @@ export const apiServices = {
   match: matchService,
   news: newsService,
   user: userService,
-  system: systemService,
-  debug: debugService,
+  system: systemService, // <-- systemService đã được định nghĩa ở trên
+  debug: debugService,   // <-- debugService đã được định nghĩa ở trên
 };
 
 // For backward compatibility

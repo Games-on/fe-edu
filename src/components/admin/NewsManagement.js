@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 
 // IMPORT MODAL COMPONENTS Ở ĐÂY
 import CreateNewsModal from './CreateNewsModal';
-import EditNewsModal from './EditNewsModal';
+// import EditNewsModal from './EditNewsModal';
 
 
 const NewsManagement = () => {
@@ -353,13 +353,13 @@ const NewsManagement = () => {
           isCreating={createNewsMutation.isLoading}
       />
 
-      <EditNewsModal
+      {/* <EditNewsModal
           show={showEditModal}
           onClose={() => setShowEditModal(false)}
           newsArticle={selectedNews} // Truyền bài viết được chọn vào modal
           onUpdateNews={({ id, data }) => updateNewsMutation.mutate({ id, data })}
           isUpdating={updateNewsMutation.isLoading}
-      />
+      /> */}
 
     </div> // Đây là thẻ đóng của div cha bao bọc toàn bộ nội dung của NewsManagement
   );

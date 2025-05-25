@@ -1,30 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import toast from 'react-hot-toast'; // Đảm bảo bạn đã cài đặt react-hot-toast
+import toast from 'react-hot-toast';
 
 const CreateNewsModal = ({ show, onClose, onCreateNews, isCreating }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [status, setStatus] = useState('DRAFT'); // Giá trị mặc định
+  const [title, setTitle] = useState(''); // Tương ứng với 'Tên' (name)
+  const [shortDescription, setShortDescription] = useState(''); // Tương ứng với 'Mô tả' (shortDescription)
+  const [content, setContent] = useState(''); // Tương ứng với 'Nội dung' (content)
+  const [status, setStatus] = useState('DRAFT');
+  const [selectedFiles, setSelectedFiles] = useState([]); // State để lưu trữ các file đã chọn
 
   useEffect(() => {
     if (!show) {
       // Reset form khi modal đóng
       setTitle('');
+      setShortDescription('');
       setContent('');
       setStatus('DRAFT');
+      setSelectedFiles([]); // Reset files khi đóng modal
     }
   }, [show]);
 
+  const handleFileSelect = (e) => {
+    // Lấy danh sách các file từ input
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      toast.error('Title and Content are required.');
+    if (!title || !content || !shortDescription) {
+      toast.error('Title, Short Description, and Content are required.');
       return;
     }
 
-    const newsData = { title, content, status };
-    onCreateNews(newsData);
+    // Tạo FormData để gửi dữ liệu dạng multipart/form-data (cần thiết khi có file)
+    const formData = new FormData();
+    formData.append('name', title); // Thay 'title' bằng 'name' để khớp với entity Backend
+    formData.append('shortDescription', shortDescription); 
+    formData.append('content', content);
+    formData.append('status', status);
+
+    selectedFiles.forEach((file) => {
+      formData.append('files', file); // 'files' là tên trường mà API của bạn sẽ mong đợi cho các file
+    });
+    onCreateNews(formData);
   };
 
   if (!show) return null;
@@ -39,28 +58,76 @@ const CreateNewsModal = ({ show, onClose, onCreateNews, isCreating }) => {
           </button>
         </div>
         <form onSubmit={handleSubmit}>
+          {/* Trường Tên (Title) */}
           <div className="mb-4">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
             <input
               type="text"
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="input-field w-full"
+              placeholder="Nhập tên"
               required
             />
           </div>
+
+          {/* Trường Mô tả (Short Description) */}
           <div className="mb-4">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+            <label htmlFor="shortDescription" className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+            <input
+              type="text"
+              id="shortDescription"
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              className="input-field w-full"
+              placeholder="Nhập mô tả"
+              required
+            />
+          </div>
+
+          {/* Trường Nội dung (Content) */}
+          <div className="mb-4">
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Nội dung</label>
             <textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows="6"
               className="input-field w-full"
+              placeholder="Nhập nội dung"
               required
             ></textarea>
           </div>
+
+          {/* Trường Ảnh đính kèm (File input) */}
+          <div className="mb-4">
+            <label htmlFor="files" className="block text-sm font-medium text-gray-700 mb-1">Ảnh đính kèm (PNG, JPG, GIF)</label>
+            <input
+              id="files"
+              type="file"
+              className="form-control-file w-full border border-gray-300 rounded-md p-2" // Sử dụng class của bạn hoặc Tailwind CSS
+              accept="image/*"
+              multiple // Cho phép chọn nhiều file
+              onChange={handleFileSelect} // Xử lý khi file được chọn
+            />
+          </div>
+
+          {/* Danh sách file đã chọn */}
+          {selectedFiles.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Các tệp đã chọn:</label>
+              <ul className="list-disc list-inside text-sm text-gray-600">
+                {selectedFiles.map((file, index) => (
+                  <li key={index}>
+                    {file.name} ({Math.round(file.size / 1024)} KB)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Trường Status */}
           <div className="mb-6">
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
@@ -74,6 +141,8 @@ const CreateNewsModal = ({ show, onClose, onCreateNews, isCreating }) => {
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
+
+          {/* Nút Tạo và Hủy */}
           <div className="flex justify-end space-x-3">
             <button
               type="button"

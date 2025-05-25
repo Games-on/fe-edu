@@ -1,149 +1,101 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
   Filter,
   UserCheck,
   UserX,
-  Shield,
   Mail,
   Calendar,
-  MoreVertical
 } from 'lucide-react';
-import { formatDate, getStatusColor } from '../../utils/helpers';
+import { formatDate } from '../../utils/helpers'; // Đảm bảo formatDate có sẵn
 import toast from 'react-hot-toast';
+import { userService } from '../../services';
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // const [statusFilter, setStatusFilter] = useState(''); // Không cần nữa vì bỏ cột status
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Mock data - replace with real API calls
   const { data: users, isLoading } = useQuery(
-    ['users', { search: searchTerm, role: roleFilter, status: statusFilter }],
-    async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return [
-        {
-          id: 1,
-          name: 'Admin User',
-          email: 'admin@gmail.com',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          createdAt: '2024-01-15T10:00:00Z',
-          lastLogin: '2024-05-24T08:30:00Z',
-          teamsCount: 0,
-          tournamentsCreated: 15
-        },
-        {
-          id: 2,
-          name: 'John Organizer',
-          email: 'organizer@gmail.com',
-          role: 'ORGANIZER',
-          status: 'ACTIVE',
-          createdAt: '2024-02-10T14:20:00Z',
-          lastLogin: '2024-05-23T16:45:00Z',
-          teamsCount: 0,
-          tournamentsCreated: 8
-        },
-        {
-          id: 3,
-          name: 'Team Captain',
-          email: 'user@gmail.com',
-          role: 'USER',
-          status: 'ACTIVE',
-          createdAt: '2024-03-05T09:15:00Z',
-          lastLogin: '2024-05-24T07:20:00Z',
-          teamsCount: 2,
-          tournamentsCreated: 0
-        },
-        {
-          id: 4,
-          name: 'Inactive User',
-          email: 'inactive@gmail.com',
-          role: 'USER',
-          status: 'INACTIVE',
-          createdAt: '2024-01-20T11:30:00Z',
-          lastLogin: '2024-04-15T12:00:00Z',
-          teamsCount: 1,
-          tournamentsCreated: 0
-        }
-      ];
-    },
-    { staleTime: 5 * 60 * 1000 }
+    // Key của query bây giờ sẽ bao gồm các filter để React Query refetch khi chúng thay đổi
+    ['users', { search: searchTerm, role: roleFilter }], // Bỏ statusFilter
+    // Gọi hàm từ userService
+    () => userService.getAllUsers({ searchTerm, roleFilter }), // Bỏ statusFilter
+    {
+      staleTime: 5 * 60 * 1000, // 5 phút
+      onError: (error) => {
+        toast.error('Failed to fetch users: ' + (error.response?.data?.message || error.message));
+      }
+    }
   );
 
   const queryClient = useQueryClient();
 
   // Mutations
   const updateUserMutation = useMutation(
-    async ({ userId, userData }) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { ...userData, id: userId };
-    },
+    ({ id, userData }) => userService.updateUser(id, userData),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('users');
         toast.success('User updated successfully');
         setShowEditModal(false);
       },
-      onError: () => {
-        toast.error('Failed to update user');
+      onError: (error) => {
+        toast.error('Failed to update user: ' + (error.response?.data?.message || error.message));
       }
     }
   );
 
   const deleteUserMutation = useMutation(
-    async (userId) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return userId;
-    },
+    (userId) => userService.deleteUser(userId),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('users');
         toast.success('User deleted successfully');
       },
-      onError: () => {
-        toast.error('Failed to delete user');
+      onError: (error) => {
+        toast.error('Failed to delete user: ' + (error.response?.data?.message || error.message));
       }
     }
   );
 
   const toggleUserStatusMutation = useMutation(
-    async ({ userId, newStatus }) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return { userId, newStatus };
-    },
+    ({ userId, newStatus }) => userService.toggleUserStatus(userId, newStatus),
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('users');
-        toast.success(`User ${data.newStatus.toLowerCase()} successfully`);
+        toast.success(`User status changed to ${data.status || data.newStatus.toLowerCase()} successfully`);
       },
-      onError: () => {
-        toast.error('Failed to update user status');
+      onError: (error) => {
+        toast.error('Failed to update user status: ' + (error.response?.data?.message || error.message));
       }
     }
   );
 
-  const filteredUsers = users?.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    const matchesStatus = !statusFilter || user.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  }) || [];
+  const addUserMutation = useMutation(
+    (userData) => userService.createUser(userData),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('users');
+        toast.success('User added successfully');
+        setShowAddModal(false);
+      },
+      onError: (error) => {
+        toast.error('Failed to add user: ' + (error.response?.data?.message || error.message));
+      }
+    }
+  );
+
+
+  const displayUsers = users || [];
 
   const handleEditUser = (user) => {
     setSelectedUser(user);
@@ -161,6 +113,14 @@ const UserManagement = () => {
     toggleUserStatusMutation.mutate({ userId, newStatus });
   };
 
+  // Lấy role từ mảng roles
+  const getUserRoleName = (user) => {
+    if (user.roles && user.roles.length > 0) {
+      return user.roles[0].name; // Lấy tên của role đầu tiên
+    }
+    return 'N/A'; // Hoặc một giá trị mặc định khác nếu không có role
+  };
+
   const roleOptions = [
     { value: '', label: 'All Roles' },
     { value: 'ADMIN', label: 'Admin' },
@@ -168,15 +128,16 @@ const UserManagement = () => {
     { value: 'USER', label: 'User' }
   ];
 
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' },
-    { value: 'SUSPENDED', label: 'Suspended' }
-  ];
+  // Bỏ statusOptions vì không dùng nữa
+  // const statusOptions = [
+  //   { value: '', label: 'All Status' },
+  //   { value: 'ACTIVE', label: 'Active' },
+  //   { value: 'INACTIVE', label: 'Inactive' },
+  //   { value: 'SUSPENDED', label: 'Suspended' }
+  // ];
 
-  const getRoleColor = (role) => {
-    switch (role) {
+  const getRoleColor = (roleName) => { // Tham số giờ là roleName
+    switch (roleName) {
       case 'ADMIN':
         return 'bg-red-100 text-red-800';
       case 'ORGANIZER':
@@ -217,7 +178,7 @@ const UserManagement = () => {
 
       {/* Search and Filters */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Sửa grid-cols-4 thành grid-cols-3 */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
@@ -228,7 +189,7 @@ const UserManagement = () => {
               className="pl-10 input-field"
             />
           </div>
-          
+
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -241,7 +202,8 @@ const UserManagement = () => {
             ))}
           </select>
 
-          <select
+          {/* Xóa select cho Status Filter */}
+          {/* <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="input-field"
@@ -251,7 +213,7 @@ const UserManagement = () => {
                 {option.label}
               </option>
             ))}
-          </select>
+          </select> */}
 
           <button className="btn-secondary flex items-center justify-center space-x-2">
             <Filter className="h-4 w-4" />
@@ -267,17 +229,16 @@ const UserManagement = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Activity
-                </th>
+                {/* Đã bỏ cột Status */}
+                {/* Đã bỏ cột Activity */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Joined
                 </th>
@@ -287,8 +248,11 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {displayUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {user.id}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -308,23 +272,12 @@ const UserManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                      {user.role}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(getUserRoleName(user))}`}>
+                      {getUserRoleName(user)} {/* Sử dụng hàm mới để lấy tên role */}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div>
-                      <div>Teams: {user.teamsCount}</div>
-                      <div>Tournaments: {user.tournamentsCreated}</div>
-                    </div>
-                  </td>
+                  {/* Đã bỏ cột Status */}
+                  {/* Đã bỏ cột Activity */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-1" />
@@ -340,17 +293,22 @@ const UserManagement = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleToggleStatus(user.id, user.status)}
-                        className={`${
-                          user.status === 'ACTIVE' 
-                            ? 'text-red-600 hover:text-red-900' 
-                            : 'text-green-600 hover:text-green-900'
-                        }`}
-                        title={user.status === 'ACTIVE' ? 'Deactivate user' : 'Activate user'}
-                      >
-                        {user.status === 'ACTIVE' ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                      </button>
+                      {/* Có thể bỏ nút toggle status nếu bạn không muốn quản lý active/inactive */}
+                      {/* Nếu vẫn muốn quản lý status, bạn cần thêm lại cột status và logic của nó,
+                          hoặc chỉ giữ nút này nếu backend vẫn có trường 'active' */}
+                      {user.active !== undefined && ( // Chỉ hiển thị nút này nếu có trường 'active'
+                        <button
+                          onClick={() => handleToggleStatus(user.id, user.active ? 'ACTIVE' : 'INACTIVE')}
+                          className={`${
+                            user.active
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          }`}
+                          title={user.active ? 'Deactivate user' : 'Activate user'}
+                        >
+                          {user.active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteUser(user.id)}
                         className="text-red-600 hover:text-red-900"
@@ -366,7 +324,7 @@ const UserManagement = () => {
           </table>
         </div>
 
-        {filteredUsers.length === 0 && (
+        {displayUsers.length === 0 && (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
@@ -378,13 +336,29 @@ const UserManagement = () => {
       {/* Pagination */}
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-gray-700">
-          Showing {filteredUsers.length} of {users?.length || 0} users
+          Showing {displayUsers.length} of {users?.length || 0} users
         </div>
         <div className="flex space-x-2">
           <button className="btn-secondary">Previous</button>
           <button className="btn-secondary">Next</button>
         </div>
       </div>
+
+      {/* Placeholders for Add/Edit Modals (you'll need to create these components) */}
+      {/* <AddUserModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAddUser={(userData) => addUserMutation.mutate(userData)}
+        isAdding={addUserMutation.isLoading}
+      />
+
+      <EditUserModal
+        show={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        user={selectedUser}
+        onUpdateUser={({ id, data }) => updateUserMutation.mutate({ id, data })}
+        isUpdating={updateUserMutation.isLoading}
+      /> */}
     </div>
   );
 };
