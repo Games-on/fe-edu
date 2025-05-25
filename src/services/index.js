@@ -1,4 +1,11 @@
 import apiClient from './api';
+import { 
+  userManagementService, 
+  adminUserService, 
+  userProfileService, 
+  passwordResetService, 
+  roleManagementService 
+} from './userManagement';
 
 // ==================== AUTH SERVICE ====================
 export const authService = {
@@ -38,6 +45,22 @@ export const tournamentService = {
   // Get all tournaments
   getAllTournaments: async (params = {}) => {
     const response = await apiClient.get('/api/tournaments', { params });
+    
+    // Backend returns PaginatedResponseDTO format
+    // Transform to expected frontend format
+    if (response.data && response.data.data) {
+      return {
+        data: response.data.data,
+        pagination: response.data.pagination || {
+          currentPage: params.page || 1,
+          totalPages: Math.ceil((response.data.data?.length || 0) / (params.limit || 10)),
+          totalItems: response.data.data?.length || 0,
+          hasNext: false,
+          hasPrev: false
+        }
+      };
+    }
+    
     return response.data;
   },
 
@@ -258,6 +281,15 @@ export const debugService = {
   // Backend implementation needed for proper debug endpoints
 };
 
+// ==================== USER MANAGEMENT SERVICE ====================
+export { 
+  userManagementService,
+  adminUserService,
+  userProfileService, 
+  passwordResetService,
+  roleManagementService
+};
+
 // ==================== EXPORT ALL SERVICES ====================
 export const apiServices = {
   auth: authService,
@@ -267,6 +299,11 @@ export const apiServices = {
   match: matchService,
   news: newsService,
   user: userService,
+  userManagement: userManagementService,
+  adminUser: adminUserService,
+  userProfile: userProfileService,
+  passwordReset: passwordResetService,
+  roleManagement: roleManagementService,
   system: systemService,
   debug: debugService,
 };

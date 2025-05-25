@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, User, Eye, ArrowRight } from 'lucide-react';
+import { Search, Calendar, User, Eye, ArrowRight, Plus, Shield } from 'lucide-react';
 import { newsService } from '../services';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, truncateText } from '../utils/helpers';
 
 const NewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
+  
+  const isAdmin = user?.role === 'ADMIN';
 
   const { data: news, isLoading, error } = useQuery(
     ['news', searchTerm],
@@ -46,11 +50,28 @@ const NewsPage = () => {
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Sports News</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Stay updated with the latest sports news, tournament updates, and community highlights
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Sports News</h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Stay updated with the latest sports news, tournament updates, and community highlights
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm text-primary-600">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin Access</span>
+                </div>
+                <Link
+                  to="/admin/news/create"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create News
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

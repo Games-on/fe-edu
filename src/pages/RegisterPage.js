@@ -28,7 +28,9 @@ const RegisterPage = () => {
         password: data.password,
       });
       toast.success('Registration successful! Please login to continue.');
+      // Navigate and force page refresh to ensure clean state
       navigate('/login');
+      window.location.reload();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     }

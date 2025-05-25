@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext';
 // Layout Components
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
+import SimpleErrorBoundary from './components/SimpleErrorBoundary';
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -77,7 +78,8 @@ function App() {
   }
 
   return (
-    <Routes>
+    <SimpleErrorBoundary>
+      <Routes>
       {/* Public Routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
@@ -130,9 +132,10 @@ function App() {
         <Route index element={<AdminPanel />} />
       </Route>
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </SimpleErrorBoundary>
   );
 }
 
