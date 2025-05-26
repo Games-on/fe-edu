@@ -93,7 +93,7 @@ const NewsPage = () => {
                 Stay updated with the latest sports news, tournament updates, and community highlights
               </p>
             </div>
-            {isAdmin && (
+            {/* {isAdmin && (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-sm text-primary-600">
                   <Shield className="h-4 w-4" />
@@ -107,7 +107,7 @@ const NewsPage = () => {
                   Create News
                 </button>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
