@@ -1,3 +1,4 @@
+// src/components/admin/NewsManagement.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
@@ -14,9 +15,10 @@ import {
   AlertTriangle,
   X
 } from 'lucide-react';
-import newsService from '../../services/newsService'; 
-import LoadingSpinner from '../LoadingSpinner'; 
-import toast from 'react-hot-toast'; 
+import newsService from '../../services/newsService';
+import LoadingSpinner from '../LoadingSpinner';
+import toast from 'react-hot-toast';
+import CreateNewsModal from './CreateNewsModal'; // <-- Import modal đã tách
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -39,26 +41,16 @@ const truncateText = (text, maxLength) => {
 const NewsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const [newsForm, setNewsForm] = useState({
-    name: '',
-    shortDescription: '',
-    content: ''
-  });
-  const [selectedFile, setSelectedFile] = useState(null); 
-
-  const fileInputRef = useRef(null); 
+  const [showCreateModal, setShowCreateModal] = useState(false); // State để điều khiển modal
 
   const queryClient = useQueryClient();
 
   const { data: news, isLoading, error } = useQuery(
-    ['admin-news', { page, searchTerm }], 
+    ['admin-news', { page, searchTerm }],
     async () => {
       console.log("DEBUG FETCH: Fetching news with page:", page, "searchTerm:", searchTerm);
-      const allNews = await newsService.getAllNews(); 
+      const allNews = await newsService.getAllNews();
 
-      // Filtering logic
       let filteredNews = allNews;
       if (searchTerm) {
         filteredNews = allNews.filter(article =>
@@ -93,13 +85,13 @@ const NewsManagement = () => {
     }
   );
 
-  // --- API Integration: Delete News Article ---
   const deleteNewsMutation = useMutation(
     (newsId) => newsService.deleteNews(newsId),
     {
       onSuccess: () => {
         toast.success('News article deleted successfully');
-        queryClient.invalidateQueries('admin-news'); 
+        queryClient.invalidateQueries('admin-news');
+        queryClient.invalidateQueries('news'); // Vô hiệu hóa cache public news
       },
       onError: (error) => {
         console.error("DEBUG DELETE ERROR: Error deleting news article:", error);
@@ -107,52 +99,9 @@ const NewsManagement = () => {
     }
   );
 
-  // --- API Integration: Create News Article and Upload Attachments ---
-  const createNewsMutation = useMutation(
-    async ({ newsData, file }) => { // Chỉ nhận 1 file
-      console.log("DEBUG MUTATION START: newsData received:", newsData);
-      console.log("DEBUG MUTATION START: file received:", file);
-
-      const createdNewsResponse = await newsService.createNews(newsData);
-      const newsId = createdNewsResponse?.id ?? createdNewsResponse?.data?.id;
-
-      console.log("DEBUG MUTATION: News created with ID:", newsId);
-
-      if (file) {
-        if (!newsId) {
-            console.error("DEBUG MUTATION ERROR: News ID is missing after creation, cannot upload attachment.");
-            throw new Error("News ID not found after creation. Failed to upload attachment.");
-        }
-        console.log(`DEBUG MUTATION: Attempting to upload file '${file.name}' for news ID: ${newsId}`);
-        await newsService.uploadNewsAttachments(newsId, file);
-        console.log("DEBUG MUTATION: Attachment uploaded successfully.");
-      } else {
-        console.log("DEBUG MUTATION: No file selected to upload, skipping attachment API call.");
-      }
-      return createdNewsResponse;
-    },
-    {
-      onSuccess: () => {
-        toast.success('News article created successfully' + (selectedFile ? ' and attachment uploaded!' : '!'));
-        queryClient.invalidateQueries('admin-news'); 
-        setShowCreateModal(false); 
-        resetForm();
-      },
-      onError: (error) => {
-        console.error("DEBUG MUTATION ERROR: Error in createNewsMutation:", error);
-
-        if (error.message && error.message.includes("News ID not found")) {
-            toast.error('Lỗi: Không thể tạo tin tức hoặc lấy ID để tải ảnh lên. Vui lòng thử lại.');
-        } else {
-        }
-      }
-    }
-  );
-
-
   const handleSearch = (e) => {
     e.preventDefault();
-    setPage(1); 
+    setPage(1);
     queryClient.invalidateQueries('admin-news');
   };
 
@@ -162,52 +111,11 @@ const NewsManagement = () => {
     }
   };
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setNewsForm(prev => ({ ...prev, [name]: value }));
+  // Callback khi tin tức được tạo từ modal
+  const handleNewsCreatedInModal = () => {
+    // Modal tự đóng và invalidate queries trong onSuccess của nó
+    // Không cần làm gì thêm ở đây trừ khi bạn muốn logic đặc biệt
   };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
-    setSelectedFile(file);
-    console.log("DEBUG HANDLEFILECHANGE: File selected:", file);
-  };
-
-  const handleCreateNews = (e) => {
-    e.preventDefault();
-
-    if (!newsForm.name || newsForm.name.trim() === '') {
-        toast.error('Tên tin tức không được để trống.');
-        return;
-    }
-    if (!newsForm.content || newsForm.content.trim() === '') {
-        toast.error('Nội dung tin tức không được để trống.');
-        return;
-    }
-
-    console.log("DEBUG HANDLECREATE: newsForm state before calling mutate:", newsForm);
-    console.log("DEBUG HANDLECREATE: selectedFile state before calling mutate:", selectedFile);
-
-    createNewsMutation.mutate({ newsData: newsForm, file: selectedFile });
-  };
-
-  const resetForm = () => {
-    setNewsForm({
-      name: '',
-      shortDescription: '',
-      content: ''
-    });
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  useEffect(() => {
-    if (!showCreateModal) { 
-      resetForm(); 
-    }
-  }, [showCreateModal]); 
 
   if (error) {
     return (
@@ -231,7 +139,7 @@ const NewsManagement = () => {
             {news?.pagination?.totalItems || 0} Articles
           </div>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowCreateModal(true)} // Mở modal
             className="btn-primary"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -363,14 +271,14 @@ const NewsManagement = () => {
             <div className="flex space-x-2">
               <button
                 onClick={() => setPage(prev => prev - 1)}
-                disabled={!news.pagination.hasPrev || deleteNewsMutation.isLoading || createNewsMutation.isLoading}
+                disabled={!news.pagination.hasPrev || deleteNewsMutation.isLoading} // <-- Xóa || createNewsMutation.isLoading
                 className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(prev => prev + 1)}
-                disabled={!news.pagination.hasNext || deleteNewsMutation.isLoading || createNewsMutation.isLoading}
+                disabled={!news.pagination.hasNext || deleteNewsMutation.isLoading} // <-- Xóa || createNewsMutation.isLoading
                 className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
@@ -380,123 +288,12 @@ const NewsManagement = () => {
         )}
       </div>
 
-      {/* Create News Modal (includes file upload functionality) */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">Create New News Article</h3>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              <form onSubmit={handleCreateNews} className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Article Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    className="input-field"
-                    placeholder="Enter article name..."
-                    value={newsForm.name}
-                    onChange={handleFormChange}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="shortDescription" className="block text-sm font-medium text-gray-700 mb-2">
-                    Short Description (Optional)
-                  </label>
-                  <textarea
-                    id="shortDescription"
-                    name="shortDescription"
-                    rows={3}
-                    className="input-field"
-                    placeholder="Brief summary of the article..."
-                    value={newsForm.shortDescription}
-                    onChange={handleFormChange}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                    Article Content <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="content"
-                    name="content"
-                    rows={8}
-                    required
-                    className="input-field"
-                    placeholder="Write your article content here..."
-                    value={newsForm.content}
-                    onChange={handleFormChange}
-                  />
-                </div>
-
-                {/* File Upload Section (chỉ 1 file) */}
-                <div>
-                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload Image (Max 1 file, image format only)
-                  </label>
-                  <button type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="btn btn-outline-primary btn-sm mb-2"
-                  >
-                    Chọn ảnh…
-                  </button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    ref={fileInputRef}
-                    hidden // Hide the native input
-                  />
-                  {selectedFile && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Ảnh đã chọn: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons in Modal */}
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 btn-secondary"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={createNewsMutation.isLoading}
-                    className="flex-1 btn-primary disabled:opacity-50"
-                  >
-                    {createNewsMutation.isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Tạo...</span>
-                      </div>
-                    ) : (
-                      'Tạo'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Render the CreateNewsModal for NewsManagement */}
+      <CreateNewsModal
+        show={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onNewsCreated={handleNewsCreatedInModal}
+      />
     </div>
   );
 };

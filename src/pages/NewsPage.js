@@ -1,5 +1,6 @@
+// src/pages/NewsPage.js
 import React, { useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
 import { Search, Calendar, User, Eye, ArrowRight, Plus, Shield } from 'lucide-react';
 import { newsService } from '../services';
@@ -7,10 +8,15 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, truncateText } from '../utils/helpers';
 
+// Import modal mới tạo
+import CreateNewsModal from '../components/admin/CreateNewsModal';
+
 const NewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
-  
+  const [showCreateNewsModal, setShowCreateNewsModal] = useState(false);
+  const queryClient = useQueryClient();
+
   const isAdmin = user?.role === 'ADMIN';
 
   const { data: news, isLoading, error } = useQuery(
@@ -20,8 +26,9 @@ const NewsPage = () => {
       staleTime: 5 * 60 * 1000,
       select: (data) => {
         if (!searchTerm) return data;
-        return data.filter(article => 
-          article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        return data.filter(article =>
+          // Sửa từ article.title thành article.name ở đây
+          article.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           article.content.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -30,6 +37,10 @@ const NewsPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+  };
+
+  const handleNewsCreated = () => {
+    queryClient.invalidateQueries('news');
   };
 
   if (error) {
@@ -63,13 +74,13 @@ const NewsPage = () => {
                   <Shield className="h-4 w-4" />
                   <span>Admin Access</span>
                 </div>
-                <Link
-                  to="/admin/news/create"
+                <button
+                  onClick={() => setShowCreateNewsModal(true)}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create News
-                </Link>
+                </button>
               </div>
             )}
           </div>
@@ -128,11 +139,11 @@ const NewsPage = () => {
                       <span>EduSports Team</span>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                      <Link 
+                      <Link
                         to={`/news/${featuredNews.id}`}
                         className="hover:text-primary-600 transition-colors"
                       >
-                        {featuredNews.title}
+                        {featuredNews.name} {/* <-- Sửa từ featuredNews.title thành featuredNews.name */}
                       </Link>
                     </h2>
                     <p className="text-gray-600 mb-4 text-lg leading-relaxed">
@@ -160,27 +171,27 @@ const NewsPage = () => {
                       <div className="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center">
                         <Calendar className="h-12 w-12 text-white" />
                       </div>
-                      
+
                       <div className="flex items-center text-sm text-gray-500 mb-2">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span>{formatDate(article.createdAt)}</span>
                         <User className="h-4 w-4 ml-4 mr-1" />
                         <span>EduSports Team</span>
                       </div>
-                      
+
                       <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                        <Link 
+                        <Link
                           to={`/news/${article.id}`}
                           className="hover:text-primary-600 transition-colors"
                         >
-                          {article.title}
+                          {article.name} {/* <-- Sửa từ article.title thành article.name */}
                         </Link>
                       </h3>
-                      
+
                       <p className="text-gray-600 mb-4 line-clamp-3">
                         {truncateText(article.content, 120)}
                       </p>
-                      
+
                       <div className="flex items-center justify-between">
                         <Link
                           to={`/news/${article.id}`}
@@ -211,6 +222,13 @@ const NewsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Render the CreateNewsModal */}
+      <CreateNewsModal
+        show={showCreateNewsModal}
+        onClose={() => setShowCreateNewsModal(false)}
+        onNewsCreated={handleNewsCreated}
+      />
     </div>
   );
 };
