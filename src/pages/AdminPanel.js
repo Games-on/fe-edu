@@ -1,10 +1,10 @@
-import React, { useState, Suspense } from 'react'; // Thêm Suspense vào đây
+import React, { useState, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { 
-  Users, 
-  Trophy, 
-  Calendar, 
-  FileText, 
+import {
+  Users,
+  Trophy,
+  Calendar,
+  FileText,
   Settings,
   Plus,
   Edit,
@@ -19,7 +19,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { tournamentService, newsService } from '../services';
+import { tournamentService, newsService } from '../services'; // Cập nhật import nếu cần
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 import toast from 'react-hot-toast';
@@ -41,8 +41,6 @@ const AdminPanel = () => {
   const isAdmin = user?.role === 'ADMIN';
   const isOrganizer = user?.role === 'ORGANIZER';
 
-
-
   const { data: adminStats, isLoading: statsLoading } = useQuery(
     'admin-stats',
     async () => {
@@ -60,8 +58,6 @@ const AdminPanel = () => {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  // Đặt điều kiện kiểm tra quyền truy cập SAU KHI tất cả các Hooks được gọi.
-  // Nếu không có quyền, component sẽ return sớm, nhưng các Hooks đã được gọi rồi.
   if (!isAdmin && !isOrganizer) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -74,7 +70,6 @@ const AdminPanel = () => {
     );
   }
 
-  // Nếu dữ liệu thống kê đang tải, có thể hiển thị LoadingSpinner
   if (statsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -85,42 +80,51 @@ const AdminPanel = () => {
   }
 
   const tabs = [
-    { 
-      id: 'users', 
-      name: 'User Management', 
-      icon: Users, 
+    {
+      id: 'users',
+      name: 'User Management',
+      icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
       description: 'Manage user accounts and permissions',
-      component: UserManagement // Thêm component vào đây
+      component: UserManagement
     },
-    { 
-      id: 'tournaments', 
-      name: 'Tournament Management', 
-      icon: Trophy, 
+    {
+      id: 'tournaments',
+      name: 'Tournament Management',
+      icon: Trophy,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
       description: 'Create and manage tournaments',
-      component: TournamentManagement // Thêm component vào đây
+      component: TournamentManagement
     },
-    { 
-      id: 'matches', 
-      name: 'Match Management', 
-      icon: Calendar, 
+    {
+      id: 'matches',
+      name: 'Match Management',
+      icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
       description: 'Schedule and manage matches',
-      component: MatchManagement // Thêm component vào đây
+      component: MatchManagement
     },
-    { 
-      id: 'news', 
-      name: 'News Management', 
-      icon: FileText, 
+    {
+      id: 'news',
+      name: 'News Management',
+      icon: FileText,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
       description: 'Create and publish news articles',
-      component: NewsManagement // Thêm component vào đây
-    }
+      component: NewsManagement
+    },
+    // { // THÊM TAB MỚI CHO TEAM MANAGEMENT
+    //   id: 'teams',
+    //   name: 'Team Management',
+    //   icon: Users, // Sử dụng icon Users hoặc một icon khác phù hợp
+    //   color: 'text-indigo-600', // Màu sắc mới
+    //   bgColor: 'bg-indigo-100',
+    //   description: 'Manage tournament teams and players',
+    //   // component: TeamManagement
+    // }
   ];
 
   const stats = [
@@ -160,9 +164,9 @@ const AdminPanel = () => {
       change: '+15%',
       changeType: 'increase'
     }
+    // Bạn có thể thêm stats cho Total Teams nếu có API cung cấp số liệu này
   ];
 
-  // Tìm component hiện tại dựa trên activeTab
   const CurrentTabComponent = tabs.find(tab => tab.id === activeTab)?.component;
 
   return (
@@ -271,11 +275,9 @@ const AdminPanel = () => {
           </div>
 
           <div className="p-6">
-            {/* --- Thay đổi ở đây: Sử dụng Suspense khi render các component động --- */}
             <Suspense fallback={<LoadingSpinner text="Loading admin module..." />}>
               {CurrentTabComponent && <CurrentTabComponent />}
             </Suspense>
-            {/* --- Kết thúc thay đổi --- */}
           </div>
         </div>
 

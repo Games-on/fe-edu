@@ -1,11 +1,11 @@
 import apiClient from './api';
-import { 
-  userManagementService, 
-  adminUserService, 
-  userProfileService, 
-  passwordResetService, 
-  roleManagementService 
-} from './userManagement';
+import {
+  userManagementService,
+  adminUserService,
+  userProfileService,
+  passwordResetService,
+  roleManagementService
+} from './userManagement'; 
 
 // ==================== AUTH SERVICE ====================
 export const authService = {
@@ -45,9 +45,6 @@ export const tournamentService = {
   // Get all tournaments
   getAllTournaments: async (params = {}) => {
     const response = await apiClient.get('/api/tournaments', { params });
-    
-    // Backend returns PaginatedResponseDTO format
-    // Transform to expected frontend format
     if (response.data && response.data.data) {
       return {
         data: response.data.data,
@@ -60,7 +57,7 @@ export const tournamentService = {
         }
       };
     }
-    
+
     return response.data;
   },
 
@@ -124,6 +121,7 @@ export const tournamentKnockoutService = {
 
 // ==================== TEAM SERVICE ====================
 export const teamService = {
+  
   // Get teams by tournament
   getTeamsByTournament: async (tournamentId) => {
     const response = await apiClient.get(`/api/tournaments/${tournamentId}/teams`);
@@ -136,8 +134,7 @@ export const teamService = {
     return response.data;
   },
 
-  // Register team for tournament
-  registerTeam: async (tournamentId, teamData) => {
+  registerTeam: async ({ tournamentId, ...teamData }) => { 
     const response = await apiClient.post(`/api/tournaments/${tournamentId}/register`, teamData);
     return response.data;
   },
@@ -153,6 +150,12 @@ export const teamService = {
     const response = await apiClient.delete(`/api/teams/${id}`);
     return response.data;
   },
+
+
+  getAllTournamentsForDropdown: async () => {
+    const response = await tournamentService.getAllTournaments({ limit: 9999 });
+    return response.data; 
+  }
 };
 
 // ==================== MATCH SERVICE ====================
@@ -204,7 +207,7 @@ export const newsService = {
 
   // Get news by ID
   getNewsById: async (id) => {
-    const response = await apiClient.get(`/api/v1/news/${id}`);
+    const response = await apiClient.get('/api/v1/news/${id}');
     return response.data;
   },
 
@@ -232,7 +235,7 @@ export const newsService = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    
+
     const response = await apiClient.post(`/api/v1/news/uploads/${newsId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -248,44 +251,29 @@ export const newsService = {
   },
 };
 
-// ==================== USER MANAGEMENT SERVICE ====================
-// Note: Backend doesn't have dedicated admin/user management endpoints
-// These would need to be implemented in backend
+// ==================== USER SERVICE (for current user/profile) ====================
 export const userService = {
-  // Get current user profile (using auth account endpoint)
   getCurrentUser: async () => {
     return authService.getAccount();
   },
-
-  // Note: The following endpoints need to be implemented in backend
-  // getAllUsers: async (params = {}) => { /* Backend needs implementation */ },
-  // updateUser: async (userId, userData) => { /* Backend needs implementation */ },
-  // deleteUser: async (userId) => { /* Backend needs implementation */ },
-  // getUserById: async (userId) => { /* Backend needs implementation */ },
 };
 
+
 // ==================== SYSTEM/ADMIN SERVICE ====================
-// Note: Backend doesn't have system/admin endpoints
-// These would need to be implemented in backend
+
 export const systemService = {
-  // Note: The following endpoints need to be implemented in backend
-  // getSystemStats: async () => { /* Backend needs implementation */ },
-  // getSystemHealth: async () => { /* Backend needs implementation */ },
-  // getApplicationLogs: async (params = {}) => { /* Backend needs implementation */ },
+
 };
 
 // ==================== DEBUG SERVICE ====================
-// Note: Backend has DebugController but endpoints are not documented
 export const debugService = {
-  // Note: Check backend DebugController for available endpoints
-  // Backend implementation needed for proper debug endpoints
 };
 
 // ==================== USER MANAGEMENT SERVICE ====================
-export { 
+export {
   userManagementService,
   adminUserService,
-  userProfileService, 
+  userProfileService,
   passwordResetService,
   roleManagementService
 };
@@ -295,20 +283,19 @@ export const apiServices = {
   auth: authService,
   tournament: tournamentService,
   tournamentKnockout: tournamentKnockoutService,
-  team: teamService,
+  // team: teamService, // Đã cập nhật
   match: matchService,
   news: newsService,
   user: userService,
-  userManagement: userManagementService,
-  adminUser: adminUserService,
-  userProfile: userProfileService,
-  passwordReset: passwordResetService,
-  roleManagement: roleManagementService,
+  userManagement: userManagementService, 
+  adminUser: adminUserService,         
+  userProfile: userProfileService,     
+  passwordReset: passwordResetService, 
+  roleManagement: roleManagementService, 
   system: systemService,
   debug: debugService,
 };
 
-// For backward compatibility
 export const adminService = systemService;
 
 export default apiServices;

@@ -18,7 +18,8 @@ import {
 import newsService from '../../services/newsService';
 import LoadingSpinner from '../LoadingSpinner';
 import toast from 'react-hot-toast';
-import CreateNewsModal from './CreateNewsModal'; // <-- Import modal đã tách
+import CreateNewsModal from './CreateNewsModal';
+import NewsDetailModal from './NewsDetailModal'; // <-- Import NewsDetailModal mới tạo
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -41,7 +42,9 @@ const truncateText = (text, maxLength) => {
 const NewsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [showCreateModal, setShowCreateModal] = useState(false); // State để điều khiển modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false); // <-- State để điều khiển modal chi tiết
+  const [selectedNews, setSelectedNews] = useState(null); // <-- State để lưu tin tức được chọn
 
   const queryClient = useQueryClient();
 
@@ -91,7 +94,7 @@ const NewsManagement = () => {
       onSuccess: () => {
         toast.success('News article deleted successfully');
         queryClient.invalidateQueries('admin-news');
-        queryClient.invalidateQueries('news'); // Vô hiệu hóa cache public news
+        queryClient.invalidateQueries('news');
       },
       onError: (error) => {
         console.error("DEBUG DELETE ERROR: Error deleting news article:", error);
@@ -111,10 +114,14 @@ const NewsManagement = () => {
     }
   };
 
-  // Callback khi tin tức được tạo từ modal
   const handleNewsCreatedInModal = () => {
-    // Modal tự đóng và invalidate queries trong onSuccess của nó
-    // Không cần làm gì thêm ở đây trừ khi bạn muốn logic đặc biệt
+    // Logic của modal tạo tin tức sẽ tự invalidate queries
+  };
+
+  // <-- Hàm xử lý khi click vào tin tức để mở modal chi tiết
+  const handleViewNewsDetail = (article) => {
+    setSelectedNews(article);
+    setShowDetailModal(true);
   };
 
   if (error) {
@@ -139,7 +146,7 @@ const NewsManagement = () => {
             {news?.pagination?.totalItems || 0} Articles
           </div>
           <button
-            onClick={() => setShowCreateModal(true)} // Mở modal
+            onClick={() => setShowCreateModal(true)}
             className="btn-primary"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -195,8 +202,12 @@ const NewsManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
             {news?.data?.map((article) => (
-              <div key={article.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                {/* Article Image (using newsService.getImageUrl) */}
+              <div
+                key={article.id}
+                className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col cursor-pointer" // <-- Thêm cursor-pointer
+                onClick={() => handleViewNewsDetail(article)} // <-- Thêm onClick vào toàn bộ thẻ div
+              >
+                {/* Article Image */}
                 <div className="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                   {article.attachments && article.attachments.length > 0 ? (
                     <img
@@ -229,17 +240,18 @@ const NewsManagement = () => {
                   </div>
 
                   {/* Action Buttons for each article */}
+                  {/* Để các nút này hoạt động độc lập, bạn cần thêm e.stopPropagation() */}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <div className="flex items-center space-x-3">
                       <button
-                        onClick={() => window.open(`/news/${article.id}`, '_blank')}
+                        onClick={(e) => { e.stopPropagation(); window.open(`/news/${article.id}`, '_blank'); }} // <-- Ngăn chặn sự kiện click lan truyền
                         className="btn-icon"
                         title="View Article"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => window.open(`/admin/news/${article.id}/edit`, '_blank')}
+                        onClick={(e) => { e.stopPropagation(); window.open(`/admin/news/${article.id}/edit`, '_blank'); }} // <-- Ngăn chặn sự kiện click lan truyền
                         className="btn-icon text-blue-600 hover:text-blue-700"
                         title="Edit Article"
                       >
@@ -248,7 +260,7 @@ const NewsManagement = () => {
                     </div>
 
                     <button
-                      onClick={() => handleDeleteNews(article.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteNews(article.id); }} // <-- Ngăn chặn sự kiện click lan truyền
                       className="btn-icon text-red-600 hover:text-red-700"
                       title="Delete Article"
                       disabled={deleteNewsMutation.isLoading}
@@ -271,14 +283,14 @@ const NewsManagement = () => {
             <div className="flex space-x-2">
               <button
                 onClick={() => setPage(prev => prev - 1)}
-                disabled={!news.pagination.hasPrev || deleteNewsMutation.isLoading} // <-- Xóa || createNewsMutation.isLoading
+                disabled={!news.pagination.hasPrev || deleteNewsMutation.isLoading}
                 className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(prev => prev + 1)}
-                disabled={!news.pagination.hasNext || deleteNewsMutation.isLoading} // <-- Xóa || createNewsMutation.isLoading
+                disabled={!news.pagination.hasNext || deleteNewsMutation.isLoading}
                 className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
@@ -288,11 +300,18 @@ const NewsManagement = () => {
         )}
       </div>
 
-      {/* Render the CreateNewsModal for NewsManagement */}
+      {/* Render Create News Modal */}
       <CreateNewsModal
         show={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onNewsCreated={handleNewsCreatedInModal}
+      />
+
+      {/* Render News Detail Modal */}
+      <NewsDetailModal
+        show={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        newsItem={selectedNews} // Truyền dữ liệu tin tức được chọn vào modal
       />
     </div>
   );

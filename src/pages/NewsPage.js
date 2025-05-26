@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
 import { Search, Calendar, User, Eye, ArrowRight, Plus, Shield } from 'lucide-react';
-import { newsService } from '../services';
+import { newsService } from '../services'; // Đảm bảo đúng đường dẫn
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, truncateText } from '../utils/helpers';
+import toast from 'react-hot-toast';
 
-// Import modal mới tạo
+// Import modal đã tạo
 import CreateNewsModal from '../components/admin/CreateNewsModal';
 
 const NewsPage = () => {
@@ -19,28 +20,51 @@ const NewsPage = () => {
 
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: news, isLoading, error } = useQuery(
-    ['news', searchTerm],
-    () => newsService.getAllNews(),
+  const {
+    data: newsResponse, // <-- Biến này sẽ nhận TOÀN BỘ OBJECT AXIOS RESPONSE
+    isLoading,
+    error
+  } = useQuery(
+    ['news'], // Key không cần searchTerm ở đây, lọc sẽ làm sau
+    async () => {
+      console.log("DEBUG FETCH: Fetching news for public page.");
+      const response = await newsService.getAllNews(); // Nhận toàn bộ Axios response
+      console.log("DEBUG: newsResponse from service (Public NewsPage):", response);
+      // Dựa trên ảnh chụp màn hình, API trả về mảng trực tiếp trong response.data
+      if (response && Array.isArray(response.data)) {
+          return response.data; // Trả về MẢNG TIN TỨC TRỰC TIẾP
+      } else {
+          console.error("Unexpected API response structure for public NewsPage:", response);
+          return []; // Trả về mảng rỗng để tránh lỗi
+      }
+    },
     {
       staleTime: 5 * 60 * 1000,
-      select: (data) => {
-        if (!searchTerm) return data;
-        return data.filter(article =>
-          // Sửa từ article.title thành article.name ở đây
-          article.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          article.content.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+      onSuccess: (data) => {
+        console.log("Processed news data (in NewsPage):", data);
+      },
+      onError: (err) => {
+        toast.error(`Error fetching news: ${err.message}`);
+        console.error("Error fetching news in NewsPage:", err);
       }
     }
   );
 
+  // Áp dụng lọc trên dữ liệu đã nhận được
+  const filteredNews = newsResponse?.filter(article =>
+    (article.name && article.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (article.content && article.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (article.shortDescription && article.shortDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) || [];
+
   const handleSearch = (e) => {
     e.preventDefault();
+    // Việc lọc sẽ diễn ra trên biến filteredNews, không cần refetch query
   };
 
   const handleNewsCreated = () => {
-    queryClient.invalidateQueries('news');
+    queryClient.invalidateQueries('news'); // Vô hiệu hóa cache public news
+    queryClient.invalidateQueries('admin-news'); // Vô hiệu hóa cache admin news (nếu có liên quan)
   };
 
   if (error) {
@@ -48,13 +72,14 @@ const NewsPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-red-600">
           <p>Error loading news. Please try again later.</p>
+          <p>Details: {error.message}</p>
         </div>
       </div>
     );
   }
 
-  const featuredNews = news?.[0];
-  const otherNews = news?.slice(1) || [];
+  const featuredNews = filteredNews?.[0];
+  const otherNews = filteredNews?.slice(1) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -111,7 +136,7 @@ const NewsPage = () => {
 
         {isLoading ? (
           <LoadingSpinner />
-        ) : news?.length === 0 ? (
+        ) : filteredNews?.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-gray-900 mb-2">No news articles found</h3>
@@ -125,7 +150,16 @@ const NewsPage = () => {
                 <div className="md:flex">
                   <div className="md:flex-shrink-0">
                     <div className="h-48 w-full md:w-64 bg-gradient-to-r from-primary-500 to-sports-purple flex items-center justify-center">
-                      <Calendar className="h-16 w-16 text-white" />
+                      {featuredNews.attachments && featuredNews.attachments.length > 0 ? (
+                         <img
+                           src={newsService.getImageUrl(featuredNews.attachments[0].url)}
+                           alt={featuredNews.name}
+                           className="w-full h-full object-cover"
+                           onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'; }}
+                         />
+                       ) : (
+                         <Calendar className="h-16 w-16 text-white" />
+                       )}
                     </div>
                   </div>
                   <div className="p-8 flex-1">
@@ -143,7 +177,7 @@ const NewsPage = () => {
                         to={`/news/${featuredNews.id}`}
                         className="hover:text-primary-600 transition-colors"
                       >
-                        {featuredNews.name} {/* <-- Sửa từ featuredNews.title thành featuredNews.name */}
+                        {featuredNews.name}
                       </Link>
                     </h2>
                     <p className="text-gray-600 mb-4 text-lg leading-relaxed">
@@ -169,7 +203,16 @@ const NewsPage = () => {
                   {otherNews.map((article) => (
                     <article key={article.id} className="card hover:shadow-lg transition-shadow duration-300">
                       <div className="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center">
-                        <Calendar className="h-12 w-12 text-white" />
+                        {article.attachments && article.attachments.length > 0 ? (
+                           <img
+                             src={newsService.getImageUrl(article.attachments[0].url)}
+                             alt={article.name}
+                             className="w-full h-full object-cover rounded-lg"
+                             onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'; }}
+                           />
+                         ) : (
+                           <Calendar className="h-12 w-12 text-white" />
+                         )}
                       </div>
 
                       <div className="flex items-center text-sm text-gray-500 mb-2">
@@ -184,7 +227,7 @@ const NewsPage = () => {
                           to={`/news/${article.id}`}
                           className="hover:text-primary-600 transition-colors"
                         >
-                          {article.name} {/* <-- Sửa từ article.title thành article.name */}
+                          {article.name}
                         </Link>
                       </h3>
 
@@ -214,7 +257,7 @@ const NewsPage = () => {
         )}
 
         {/* Load More Button */}
-        {news && news.length >= 10 && (
+        {filteredNews && filteredNews.length >= 10 && ( // Có thể cần logic phức tạp hơn cho "Load More" nếu bạn không phân trang
           <div className="text-center mt-12">
             <button className="btn-secondary">
               Load More Articles
