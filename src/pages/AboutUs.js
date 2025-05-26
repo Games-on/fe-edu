@@ -41,7 +41,7 @@ const AboutUs = () => {
               <div className="order-first md:order-last">
                 {/* Placeholder for an image */}
                 <img
-                  src="https://images.unsplash.com/photo-1549646877-e892c23a7761?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                  src="https://irace.vn/wp-content/uploads/2019/12/chay-2.png"
                   alt="Students playing sports"
                   className="rounded-lg shadow-xl w-full h-64 object-cover md:h-auto"
                 />
@@ -93,7 +93,7 @@ const AboutUs = () => {
               {/* Example Team Member Card */}
               <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
                 <img
-                  src="https://via.placeholder.com/150/007bff/FFFFFF?text=Team+Member" // Placeholder image
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRI9lRck6miglY0SZF_BZ_sK829yiNskgYRUg&s" // Placeholder image
                   alt="Team Member Name"
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
                 />
@@ -103,7 +103,7 @@ const AboutUs = () => {
               </div>
               <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
                 <img
-                  src="https://via.placeholder.com/150/28a745/FFFFFF?text=Team+Member" // Placeholder image
+                  src="https://png.pngtree.com/element_our/png/20181206/users-vector-icon-png_260862.jpg" // Placeholder image
                   alt="Team Member Name"
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
                 />
@@ -113,7 +113,7 @@ const AboutUs = () => {
               </div>
               <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
                 <img
-                  src="https://via.placeholder.com/150/ffc107/FFFFFF?text=Team+Member" // Placeholder image
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcxYm4FfGa3yNBgy8Qf76dfzNAjNe6TD8BdQ&s" // Placeholder image
                   alt="Team Member Name"
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
                 />
