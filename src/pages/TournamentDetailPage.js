@@ -18,9 +18,11 @@ import { tournamentService, teamService, matchService } from '../services';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import TournamentBracketGenerator from '../components/tournament/TournamentBracketGenerator';
-import TournamentRoundManager from '../components/tournament/TournamentRoundManager';
+import RoundManager from '../components/tournament/RoundManager';
 import TournamentBracketView from '../components/tournament/TournamentBracketView';
+import MatchResultsManager from '../components/tournament/MatchResultsManager';
 import TeamRegistrationModal from '../components/tournament/TeamRegistrationModal';
+import TournamentManagement from '../components/tournament/TournamentManagement';
 import { formatDate, formatDateTime, getStatusColor } from '../utils/helpers';
 
 const TournamentDetailPage = () => {
@@ -108,7 +110,11 @@ const TournamentDetailPage = () => {
     { id: 'teams', name: 'Teams', icon: Users },
     { id: 'matches', name: 'Matches', icon: Play },
     { id: 'bracket', name: 'Bracket', icon: Target },
-    ...(isAdmin ? [{ id: 'management', name: 'Management', icon: Settings }] : [])
+    ...(isAdmin ? [
+      { id: 'match-results', name: 'Match Results', icon: Award },
+      { id: 'round-management', name: 'Round Management', icon: ArrowLeft },
+      { id: 'management', name: 'Management', icon: Settings }
+    ] : [])
   ];
 
   return (
@@ -349,6 +355,14 @@ const TournamentDetailPage = () => {
                 <p className="text-gray-600">
                   Matches will be available once the tournament bracket is generated.
                 </p>
+                {isAdmin && tournamentData.status === 'REGISTRATION' && (
+                  <div className="mt-6">
+                    <TournamentBracketGenerator
+                      tournament={tournamentData}
+                      onBracketGenerated={handleBracketGenerated}
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="card">
@@ -395,30 +409,92 @@ const TournamentDetailPage = () => {
         )}
 
         {activeTab === 'bracket' && (
-          <div>
+          <div className="space-y-6">
+            {/* Bracket Generator for Admin */}
+            {isAdmin && (tournamentData.status === 'REGISTRATION' || tournamentData.status === 'UPCOMING' || tournamentData.status === 'READY_TO_START') && (
+              <TournamentBracketGenerator
+                tournament={tournamentData}
+                onBracketGenerated={handleBracketGenerated}
+              />
+            )}
+            
+            {/* Bracket View */}
             {bracketLoading ? (
               <LoadingSpinner />
             ) : (
-              <TournamentBracketView bracket={bracket?.data} tournament={tournamentData} />
+              <TournamentBracketView tournament={tournamentData} />
             )}
           </div>
         )}
 
+        {activeTab === 'match-results' && isAdmin && (
+          <MatchResultsManager
+            tournament={tournamentData}
+            currentRound={currentRound || 1}
+          />
+        )}
+
+        {activeTab === 'round-management' && isAdmin && (
+          <RoundManager
+            tournament={tournamentData}
+            currentRound={currentRound || 1}
+          />
+        )}
+
         {activeTab === 'management' && isAdmin && (
           <div className="space-y-6">
-            <TournamentBracketGenerator 
-              tournament={tournamentData} 
-              onBracketGenerated={handleBracketGenerated}
-            />
-            
-            {(tournamentData.status === 'ONGOING' || tournamentData.status === 'READY') && (
-              <TournamentRoundManager 
-                tournament={tournamentData}
-                currentRound={currentRound}
-                matches={roundMatches}
-                onRoundAdvanced={handleRoundAdvanced}
-              />
-            )}
+            {/* Tournament Status & Controls */}
+            <div className="card">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Tournament Management</h2>
+              
+              {/* Tournament Actions Based on Status */}
+              {tournamentData.status === 'REGISTRATION' && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">Registration Phase</h3>
+                    <p className="text-blue-700 mb-4">
+                      Tournament is currently in registration phase. 
+                      You can generate bracket once enough teams have registered.
+                    </p>
+                    <TournamentBracketGenerator
+                      tournament={tournamentData}
+                      onBracketGenerated={handleBracketGenerated}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {(tournamentData.status === 'READY' || tournamentData.status === 'ONGOING') && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Match Management</h3>
+                    <MatchResultsManager
+                      tournament={tournamentData}
+                      currentRound={currentRound || 1}
+                    />
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Round Management</h3>
+                    <RoundManager
+                      tournament={tournamentData}
+                      currentRound={currentRound || 1}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {tournamentData.status === 'COMPLETED' && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <Trophy className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-green-900 mb-2">Tournament Completed!</h3>
+                  <p className="text-green-700">
+                    This tournament has been successfully completed. 
+                    All results and brackets are final.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

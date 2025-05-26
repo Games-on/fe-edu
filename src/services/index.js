@@ -146,26 +146,55 @@ export const tournamentService = {
 export const tournamentKnockoutService = {
   // Generate tournament bracket
   generateBracket: async (tournamentId, bracketData) => {
-    const response = await apiClient.post(`/api/tournaments/${tournamentId}/generate-bracket`, bracketData);
-    return response.data;
+    console.log('🎯 [TournamentKnockout] Generating bracket for tournament:', tournamentId);
+    console.log('Data:', bracketData);
+    try {
+      const response = await apiClient.post(`/api/tournaments/${tournamentId}/generate-bracket`, bracketData);
+      console.log('✅ [TournamentKnockout] Generate bracket success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentKnockout] Generate bracket failed:', error);
+      throw error;
+    }
   },
 
   // Start knockout tournament
   startKnockout: async (tournamentId) => {
-    const response = await apiClient.post(`/api/tournaments/${tournamentId}/start-knockout`);
-    return response.data;
+    console.log('🚀 [TournamentKnockout] Starting knockout tournament:', tournamentId);
+    try {
+      const response = await apiClient.post(`/api/tournaments/${tournamentId}/start-knockout`);
+      console.log('✅ [TournamentKnockout] Start knockout success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentKnockout] Start knockout failed:', error);
+      throw error;
+    }
   },
 
   // Advance to next round
   advanceRound: async (tournamentId) => {
-    const response = await apiClient.post(`/api/tournaments/${tournamentId}/advance-round`);
-    return response.data;
+    console.log('⏭️ [TournamentKnockout] Advancing round for tournament:', tournamentId);
+    try {
+      const response = await apiClient.post(`/api/tournaments/${tournamentId}/advance-round`);
+      console.log('✅ [TournamentKnockout] Advance round success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentKnockout] Advance round failed:', error);
+      throw error;
+    }
   },
 
   // Complete tournament
   completeTournament: async (tournamentId) => {
-    const response = await apiClient.post(`/api/tournaments/${tournamentId}/complete`);
-    return response.data;
+    console.log('🏆 [TournamentKnockout] Completing tournament:', tournamentId);
+    try {
+      const response = await apiClient.post(`/api/tournaments/${tournamentId}/complete`);
+      console.log('✅ [TournamentKnockout] Complete tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentKnockout] Complete tournament failed:', error);
+      throw error;
+    }
   },
 };
 

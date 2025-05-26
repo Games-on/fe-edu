@@ -13,12 +13,71 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
   const handleGenerateBracket = async () => {
     setIsGenerating(true);
     try {
+      console.log('🚀 Generating bracket for tournament:', tournament.id);
+      console.log('📊 Bracket data:', bracketData);
+      console.log('👥 Current teams:', tournament.currentTeams);
+      
+      // Debug: Check teams data before generating bracket
+      try {
+        const teamsResponse = await fetch(`http://localhost:8080/api/tournaments/${tournament.id}/teams`);
+        const teamsData = await teamsResponse.json();
+        console.log('📊 Teams API response:', teamsData);
+        console.log('📊 Teams count:', teamsData?.data?.length || 0);
+        console.log('📊 Team IDs:', teamsData?.data?.map(t => ({ id: t.id, name: t.name })) || []);
+      } catch (teamError) {
+        console.error('⚠️ Failed to fetch teams for debugging:', teamError);
+      }
+      
       const response = await tournamentKnockoutService.generateBracket(tournament.id, bracketData);
+      console.log('✅ Generate bracket success:', response);
+      
       toast.success('Tournament bracket generated successfully!');
       onBracketGenerated?.(response.data);
     } catch (error) {
-      console.error('Generate bracket error:', error);
-      toast.error(error.response?.data?.message || 'Failed to generate bracket');
+      console.error('❌ Generate bracket error:', error);
+      console.error('📋 Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        statusText: error.response?.statusText
+      });
+      
+      // More detailed error handling
+      let errorMessage = 'Failed to generate bracket';
+      
+      if (error.response?.status === 400) {
+        const backendMessage = error.response?.data?.message;
+        if (backendMessage?.includes('Data truncated')) {
+          errorMessage = '🗃️ Database configuration issue. Tournament status field may be too short. Please contact administrator.';
+        } else if (backendMessage?.includes('not-null property references a null')) {
+          if (backendMessage.includes('team1') || backendMessage.includes('team2')) {
+            errorMessage = '👥 Teams data issue. Cannot create matches because team assignments are null. Please check if teams are properly registered and have valid IDs.';
+          } else {
+            errorMessage = `🗃️ Database constraint violation: ${backendMessage}`;
+          }
+        } else if (backendMessage?.includes('not enough teams')) {
+          errorMessage = `⚠️ Not enough teams to generate bracket. Need at least 2 teams, current: ${tournament.currentTeams || 0}`;
+        } else if (backendMessage) {
+          errorMessage = backendMessage;
+        } else {
+          errorMessage = 'Invalid tournament data. Please check if tournament has enough registered teams.';
+        }
+      } else if (error.response?.status === 500) {
+        errorMessage = '🔧 Server error. Please check backend logs and try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      toast.error(errorMessage, {
+        duration: 6000,
+        style: {
+          background: '#EF4444',
+          color: 'white',
+          fontSize: '14px',
+          padding: '16px',
+          borderRadius: '8px'
+        }
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -47,7 +106,7 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
         </div>
       </div>
 
-      {tournament.status === 'UPCOMING' && (
+      {(tournament.status === 'REGISTRATION' || tournament.status === 'UPCOMING' || tournament.status === 'READY_TO_START') && (
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
@@ -55,7 +114,7 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
               <div>
                 <h4 className="text-sm font-medium text-blue-900">Ready to Generate Bracket</h4>
                 <p className="text-sm text-blue-700 mt-1">
-                  Tournament has {tournament.registeredTeams || 0} registered teams. 
+                  Tournament has {tournament.currentTeams || tournament.registeredTeams || 0} registered teams. 
                   Generate the bracket to set up matches.
                 </p>
               </div>
@@ -70,7 +129,7 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
               <select
                 value={bracketData.type}
                 onChange={(e) => setBracketData({ ...bracketData, type: e.target.value })}
-                className="input-field"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="SINGLE_ELIMINATION">Single Elimination</option>
                 <option value="DOUBLE_ELIMINATION">Double Elimination</option>
@@ -93,8 +152,8 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
             <div className="flex space-x-3">
               <button
                 onClick={handleGenerateBracket}
-                disabled={isGenerating}
-                className="btn-primary flex items-center space-x-2"
+                disabled={isGenerating || (tournament.currentTeams || 0) < 2}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {isGenerating ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -108,7 +167,7 @@ const TournamentBracketGenerator = ({ tournament, onBracketGenerated }) => {
         </div>
       )}
 
-      {tournament.status === 'READY' && (
+      {(tournament.status === 'READY' || tournament.status === 'READY_TO_START') && (
         <div className="space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
