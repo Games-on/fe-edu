@@ -173,8 +173,15 @@ export const tournamentKnockoutService = {
 export const teamService = {
   // Get teams by tournament
   getTeamsByTournament: async (tournamentId) => {
-    const response = await apiClient.get(`/api/tournaments/${tournamentId}/teams`);
-    return response.data;
+    console.log('👥 [TeamService] Getting teams by tournament ID:', tournamentId);
+    try {
+      const response = await apiClient.get(`/api/tournaments/${tournamentId}/teams`);
+      console.log('✅ [TeamService] Get teams by tournament success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TeamService] Get teams by tournament failed:', error);
+      throw error;
+    }
   },
 
   // Get team by ID
@@ -185,8 +192,24 @@ export const teamService = {
 
   // Register team for tournament
   registerTeam: async (tournamentId, teamData) => {
-    const response = await apiClient.post(`/api/tournaments/${tournamentId}/register`, teamData);
-    return response.data;
+    console.log('🚀 [TeamService] Register team request:');
+    console.log('  Tournament ID:', tournamentId);
+    console.log('  Team Data:', teamData);
+    console.log('  Full URL:', `/api/tournaments/${tournamentId}/register`);
+    console.log('  Token:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
+    
+    try {
+      const response = await apiClient.post(`/api/tournaments/${tournamentId}/register`, teamData);
+      console.log('✅ [TeamService] Register team success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TeamService] Register team failed:');
+      console.error('  Status:', error.response?.status);
+      console.error('  Data:', error.response?.data);
+      console.error('  Headers:', error.response?.headers);
+      console.error('  Request config:', error.config);
+      throw error;
+    }
   },
 
   // Update team

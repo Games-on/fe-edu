@@ -11,7 +11,8 @@ import {
   Target,
   Award,
   Settings,
-  Play
+  Play,
+  UserPlus
 } from 'lucide-react';
 import { tournamentService, teamService, matchService } from '../services';
 import { useAuth } from '../context/AuthContext';
@@ -19,12 +20,14 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import TournamentBracketGenerator from '../components/tournament/TournamentBracketGenerator';
 import TournamentRoundManager from '../components/tournament/TournamentRoundManager';
 import TournamentBracketView from '../components/tournament/TournamentBracketView';
+import TeamRegistrationModal from '../components/tournament/TeamRegistrationModal';
 import { formatDate, formatDateTime, getStatusColor } from '../utils/helpers';
 
 const TournamentDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ORGANIZER';
 
@@ -34,12 +37,18 @@ const TournamentDetailPage = () => {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  const { data: teams, isLoading: teamsLoading } = useQuery(
+  const { data: teams, isLoading: teamsLoading, refetch: refetchTeams } = useQuery(
     ['tournament-teams', id],
     () => teamService.getTeamsByTournament(id),
     { 
       staleTime: 5 * 60 * 1000,
-      enabled: !!id 
+      enabled: !!id,
+      onSuccess: (data) => {
+        console.log('👥 [TournamentDetailPage] Teams data loaded:', data);
+      },
+      onError: (error) => {
+        console.error('❌ [TournamentDetailPage] Teams loading failed:', error);
+      }
     }
   );
 
@@ -90,6 +99,7 @@ const TournamentDetailPage = () => {
   }
 
   const tournamentData = tournament.data;
+  const canRegister = user && !isAdmin && (tournamentData.status === 'REGISTRATION' || tournamentData.status === 'UPCOMING');
   const currentRound = matches?.data?.currentRound;
   const roundMatches = matches?.data?.matches?.filter(match => match.round === currentRound) || [];
 
@@ -127,14 +137,15 @@ const TournamentDetailPage = () => {
               <p className="text-lg text-gray-600">{tournamentData.description}</p>
             </div>
             
-            {tournamentData.status === 'UPCOMING' && !isAdmin && (
+            {canRegister && (
               <div className="mt-4 lg:mt-0">
-                <Link
-                  to={`/tournaments/${id}/register`}
-                  className="btn-primary"
+                <button
+                  onClick={() => setShowRegistrationModal(true)}
+                  className="btn-primary flex items-center space-x-2"
                 >
-                  Register Team
-                </Link>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Đăng ký tham gia</span>
+                </button>
               </div>
             )}
           </div>
@@ -315,7 +326,7 @@ const TournamentDetailPage = () => {
                       <p className="text-sm text-gray-600 mb-2">{team.description}</p>
                     )}
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Registered: {formatDate(team.registrationDate)}</span>
+                      <span>Registered: {formatDate(team.registrationDate || team.createdAt)}</span>
                       <div className={`px-2 py-1 rounded-full ${getStatusColor(team.status || 'APPROVED')}`}>
                         {team.status || 'APPROVED'}
                       </div>
@@ -411,6 +422,18 @@ const TournamentDetailPage = () => {
           </div>
         )}
       </div>
+
+      {/* Team Registration Modal */}
+      <TeamRegistrationModal
+        isOpen={showRegistrationModal}
+        onClose={() => setShowRegistrationModal(false)}
+        tournament={tournamentData}
+        onSuccess={() => {
+          setShowRegistrationModal(false);
+          refetchTournament();
+          refetchTeams();
+        }}
+      />
     </div>
   );
 };

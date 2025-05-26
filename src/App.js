@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 
 // Layout Components
@@ -85,71 +86,99 @@ function App() {
   }
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
-        <Route path="tournaments" element={<TournamentsPage />} />
-        <Route path="tournaments/:id" element={<TournamentDetailPage />} />
-        <Route path="news" element={<NewsPage />} />
-        <Route path="news/:id" element={<NewsDetailPage />} />
-        
-
-         {/* Các route cho trang tĩnh */}
-          <Route path="/help-center" element={<HelpCenter />} />
-          <Route path="/contact-us" element={<ContactUs />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/about" element={<AboutUs />} />
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="tournaments" element={<TournamentsPage />} />
+          <Route path="tournaments/:id" element={<TournamentDetailPage />} />
+          <Route path="news" element={<NewsPage />} />
+          <Route path="news/:id" element={<NewsDetailPage />} />
           
-      </Route>
 
-      {/* Auth Routes */}
-      <Route 
-        path="/login" 
-        element={
-          <AuthOnlyRoute>
-            <LoginPage />
-          </AuthOnlyRoute>
-        } 
-      />
-      <Route 
-        path="/register" 
-        element={
-          <AuthOnlyRoute>
-            <RegisterPage />
-          </AuthOnlyRoute>
-        } 
-      />
+           {/* Các route cho trang tĩnh */}
+            <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/about" element={<AboutUs />} />
+            
+        </Route>
 
-      {/* Protected Routes */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-      </Route>
+        {/* Auth Routes */}
+        <Route 
+          path="/login" 
+          element={
+            <AuthOnlyRoute>
+              <LoginPage />
+            </AuthOnlyRoute>
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            <AuthOnlyRoute>
+              <RegisterPage />
+            </AuthOnlyRoute>
+          } 
+        />
 
-      {/* Admin Routes */}
-      <Route 
-        path="/admin" 
-        element={
-          <AdminRoute>
-            <Layout />
-          </AdminRoute>
-        }
-      >
-        <Route index element={<AdminPanel />} />
-      </Route>
+        {/* Protected Routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+        </Route>
 
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        {/* Admin Routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <AdminRoute>
+              <Layout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminPanel />} />
+        </Route>
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        
+        {/* Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 6000,
+              iconTheme: {
+                primary: '#10B981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 6000,
+              iconTheme: {
+                primary: '#EF4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+    </>
   );
 }
 
