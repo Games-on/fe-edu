@@ -7,25 +7,11 @@ const newsService = {
   // Get all news articles
   getAllNews: async () => {
     try {
-      const response = await apiClient.get(API_BASE_PATH);
-      
-      // Handle different response structures
-      let newsList;
-      if (Array.isArray(response)) {
-        newsList = response;
-      } else if (response?.data && Array.isArray(response.data)) {
-        newsList = response.data;
-      } else if (response?.content && Array.isArray(response.content)) {
-        newsList = response.content;
-      } else if (response?.items && Array.isArray(response.items)) {
-        newsList = response.items;
-      } else {
-        newsList = [];
-      }
-      
-      return Array.isArray(newsList) ? newsList : [];
+
+      const newsList = await apiClient.get(API_BASE_PATH);
+      return newsList;
     } catch (error) {
-      console.error('Error fetching news:', error);
+      console.error("Error fetching all news:", error);
       throw error; 
     }
   },
@@ -44,9 +30,9 @@ const newsService = {
   createNews: async (newsData) => {
     try {
       const response = await apiClient.post(API_BASE_PATH, newsData);
-      return response?.data || response;
+      return response.data || response;
     } catch (error) {
-      console.error('Error creating news:', error);
+      console.error("Error creating news:", error);
       throw error;
     }
   },

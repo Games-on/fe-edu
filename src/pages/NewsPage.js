@@ -50,7 +50,7 @@ const NewsPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-red-600">
-          <p>Lỗi khi tải tin tức. Vui lòng thử lại sau.</p>
+          <p>Error loading news. Please try again later.</p>
           <p className="text-sm text-gray-500 mt-2">Error: {error.message}</p>
         </div>
       </div>
