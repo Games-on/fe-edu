@@ -41,7 +41,7 @@ const AboutUs = () => {
               <div className="order-first md:order-last">
                 {/* Placeholder for an image */}
                 <img
-                  src="https://images.unsplash.com/photo-1549646877-e892c23a7761?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                  src="https://nativespeaker.vn/uploaded/page_1656_1712278968_1715676497.jpg"
                   alt="Students playing sports"
                   className="rounded-lg shadow-xl w-full h-64 object-cover md:h-auto"
                 />
@@ -93,31 +93,31 @@ const AboutUs = () => {
               {/* Example Team Member Card */}
               <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
                 <img
-                  src="https://via.placeholder.com/150/007bff/FFFFFF?text=Team+Member" // Placeholder image
+                  src="https://cdn-icons-png.flaticon.com/512/3001/3001758.png" // Placeholder image
                   alt="Team Member Name"
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
                 />
-                <h3 className="text-xl font-semibold text-gray-900">John Doe</h3>
-                <p className="text-primary-600">Founder & CEO</p>
-                <p className="text-gray-600 text-sm mt-2">Passionate about sports tech and education.</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
-                <img
-                  src="https://via.placeholder.com/150/28a745/FFFFFF?text=Team+Member" // Placeholder image
-                  alt="Team Member Name"
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
-                />
-                <h3 className="text-xl font-semibold text-gray-900">Jane Smith</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Andev</h3>
                 <p className="text-primary-600">Lead Developer</p>
                 <p className="text-gray-600 text-sm mt-2">Crafting robust and scalable solutions.</p>
               </div>
               <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
                 <img
-                  src="https://via.placeholder.com/150/ffc107/FFFFFF?text=Team+Member" // Placeholder image
+                  src="https://www.pngkey.com/png/detail/151-1518198_avatar-anonimo-mujer-women-user-icon-png.png" // Placeholder image
                   alt="Team Member Name"
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
                 />
-                <h3 className="text-xl font-semibold text-gray-900">Mike Johnson</h3>
+                <h3 className="text-xl font-semibold text-gray-900">TrangPT</h3>
+                <p className="text-primary-600">Lead Developer</p>
+                <p className="text-gray-600 text-sm mt-2">Crafting robust and scalable solutions.</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6 text-center transform hover:scale-105 transition-transform duration-300">
+                <img
+                  src="https://cdn4.iconfinder.com/data/icons/mixed-set-1-1/128/28-512.png" // Placeholder image
+                  alt="Team Member Name"
+                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-primary-500"
+                />
+                <h3 className="text-xl font-semibold text-gray-900">Linh</h3>
                 <p className="text-primary-600">Community Manager</p>
                 <p className="text-gray-600 text-sm mt-2">Connecting with our users and partners.</p>
               </div>

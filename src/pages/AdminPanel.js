@@ -53,10 +53,10 @@ const AdminPanel = () => {
       // This would be a real API call in production
       // For now, it's mocked data:
       return {
-        totalUsers: 156,
-        totalTournaments: 25,
-        activeMatches: 12,
-        publishedNews: 34,
+        totalUsers: 15,
+        totalTournaments: 10,
+        activeMatches: 9,
+        publishedNews: 12,
         pendingApprovals: 8,
         systemHealth: 99.2
       };
@@ -116,15 +116,15 @@ const AdminPanel = () => {
       description: 'Create and manage tournaments',
       component: TournamentManagement // Thêm component vào đây
     },
-    { 
-      id: 'matches', 
-      name: 'Match Management', 
-      icon: Calendar, 
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-      description: 'Schedule and manage matches',
-      component: MatchManagement // Thêm component vào đây
-    },
+    // { 
+    //   id: 'matches', 
+    //   name: 'Match Management', 
+    //   icon: Calendar, 
+    //   color: 'text-green-600',
+    //   bgColor: 'bg-green-100',
+    //   description: 'Schedule and manage matches',
+    //   component: MatchManagement // Thêm component vào đây
+    // },
     { 
       id: 'news', 
       name: 'News Management', 
@@ -154,7 +154,7 @@ const AdminPanel = () => {
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
-      change: '+12%',
+      // change: '+12%',
       changeType: 'increase'
     },
     {
@@ -163,7 +163,7 @@ const AdminPanel = () => {
       icon: Trophy,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
-      change: '+8%',
+      // change: '+8%',
       changeType: 'increase'
     },
     {
@@ -172,7 +172,7 @@ const AdminPanel = () => {
       icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
-      change: '+5%',
+      // change: '+5%',
       changeType: 'increase'
     },
     {
@@ -181,7 +181,7 @@ const AdminPanel = () => {
       icon: FileText,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
-      change: '+15%',
+      // change: '+15%',
       changeType: 'increase'
     }
   ];
@@ -236,7 +236,7 @@ const AdminPanel = () => {
                     }`}>
                       {stat.change}
                     </span>
-                    <span className="text-sm text-gray-500 ml-1">vs last month</span>
+                    {/* <span className="text-sm text-gray-500 ml-1">vs last month</span> */}
                   </div>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>

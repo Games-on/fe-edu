@@ -67,12 +67,12 @@ const NewsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">Tin tức thể thao</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">News</h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Cập nhật tin tức thể thao mới nhất, thông tin giải đấu và những điểm nổi bật của cộng đồng
+                Get the latest sports news, tournament information and community highlights
               </p>
             </div>
-            {isAdmin && (
+            {/* {isAdmin && (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-sm text-primary-600">
                   <Shield className="h-4 w-4" />
@@ -86,7 +86,7 @@ const NewsPage = () => {
                   Quản lý tin tức
                 </Link>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ const NewsPage = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm tin tức..."
+                  placeholder="Search news..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 input-field"
@@ -108,7 +108,7 @@ const NewsPage = () => {
               </div>
             </div>
             <button type="submit" className="btn-primary">
-              Tìm kiếm
+              Search
             </button>
           </form>
         </div>
@@ -118,15 +118,15 @@ const NewsPage = () => {
         ) : !news || news.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Không tìm thấy tin tức</h3>
-            <p className="text-gray-600">Hãy quay lại sau để xem cập nhật thể thao mới nhất</p>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No news found</h3>
+            <p className="text-gray-600">Check back later for the latest sports updates</p>
             {isAdmin && (
               <Link
                 to="/admin"
                 className="inline-flex items-center mt-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Tạo tin tức đầu tiên
+                Create first news
               </Link>
             )}
           </div>
@@ -160,7 +160,7 @@ const NewsPage = () => {
                   <div className="p-8 flex-1">
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <span className="bg-primary-100 text-primary-800 px-2 py-1 rounded-full text-xs font-medium mr-3">
-                        Nổi bật
+                        Outstanding
                       </span>
                       <Calendar className="h-4 w-4 mr-1" />
                       <span>{formatDate(featuredNews.createdAt)}</span>
@@ -182,7 +182,7 @@ const NewsPage = () => {
                       to={`/news/${featuredNews.id}`}
                       className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium"
                     >
-                      Đọc toàn bộ bài viết
+                      Read full article
                       <ArrowRight className="h-4 w-4 ml-1" />
                     </Link>
                   </div>
@@ -193,7 +193,7 @@ const NewsPage = () => {
             {/* Other Articles Grid */}
             {otherNews.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Bài viết khác</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Other articles</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {otherNews.map((article) => (
                     <article key={article.id} className="card hover:shadow-lg transition-shadow duration-300">
@@ -242,12 +242,12 @@ const NewsPage = () => {
                           to={`/news/${article.id}`}
                           className="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center"
                         >
-                          Đọc thêm
+                          Read more
                           <ArrowRight className="h-3 w-3 ml-1" />
                         </Link>
                         <div className="flex items-center text-sm text-gray-500">
                           <Eye className="h-4 w-4 mr-1" />
-                          <span>0 lượt xem</span>
+                          <span>0 view</span>
                         </div>
                       </div>
                     </article>
@@ -262,7 +262,7 @@ const NewsPage = () => {
         {news && news.length >= 10 && (
           <div className="text-center mt-12">
             <button className="btn-secondary">
-              Tải thêm bài viết
+              Load more articles
             </button>
           </div>
         )}

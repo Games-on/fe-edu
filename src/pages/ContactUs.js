@@ -48,7 +48,7 @@ const ContactUs = () => {
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">Email</h3>
                   <a href="mailto:support@edusports.com" className="text-primary-600 hover:underline">
-                    support@edusports.com
+                    cskh@edusports.com
                   </a>
                 </div>
               </div>
@@ -57,7 +57,7 @@ const ContactUs = () => {
                 <Clock className="h-6 w-6 text-primary-600 flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">Working Hours</h3>
-                  <p className="text-gray-700">Monday - Friday: 9:00 AM - 5:00 PM (GMT+7)</p>
+                  <p className="text-gray-700">Monday - Friday: 8:00 AM - 5:00 PM (GMT+7)</p>
                   <p className="text-gray-700">Saturday - Sunday: Closed</p>
                 </div>
               </div>
@@ -93,16 +93,16 @@ const ContactUs = () => {
           <div className="mt-12 text-center border-t border-gray-200 pt-8">
             <h2 className="text-3xl font-bold text-gray-800 mb-4">Connect With Us</h2>
             <div className="flex justify-center space-x-6 text-primary-600">
-              <a href="https://facebook.com/edusports" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
+              <a href="/home" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
                 <Facebook className="h-8 w-8" />
               </a>
-              <a href="https://twitter.com/edusports" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
+              <a href="/home" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
                 <Twitter className="h-8 w-8" />
               </a>
-              <a href="https://linkedin.com/company/edusports" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
+              <a href="/home" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
                 <Linkedin className="h-8 w-8" />
               </a>
-              <a href="https://instagram.com/edusports" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
+              <a href="/home" target="_blank" rel="noopener noreferrer" className="hover:text-primary-800 transition-colors">
                 <Instagram className="h-8 w-8" />
               </a>
             </div>
