@@ -140,6 +140,31 @@ export const tournamentService = {
       throw error;
     }
   },
+
+  // Get current round from dedicated endpoint
+  getCurrentRound: async (tournamentId) => {
+    console.log('🎯 [TournamentService] Getting current round for tournament:', tournamentId);
+    try {
+      const response = await apiClient.get(`/api/tournaments/${tournamentId}/current-round`);
+      console.log('✅ [TournamentService] Get current round success:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ [TournamentService] Get current round failed:', error);
+      // Fallback format to match API response structure
+      return { 
+        data: { 
+          success: false,
+          data: { 
+            currentRound: 1, 
+            tournamentId: tournamentId,
+            tournamentName: "Unknown",
+            totalRounds: 1,
+            completedRounds: 0
+          } 
+        } 
+      };
+    }
+  },
 };
 
 // ==================== TOURNAMENT KNOCKOUT SERVICE ====================

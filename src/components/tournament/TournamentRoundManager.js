@@ -13,6 +13,11 @@ const TournamentRoundManager = ({ tournament, currentRound, matches, onRoundAdva
       const response = await tournamentKnockoutService.advanceRound(tournament.id);
       toast.success('Successfully advanced to next round!');
       onRoundAdvanced?.(response.data);
+      
+      // Force refresh page to ensure UI updates
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Advance round error:', error);
       toast.error(error.response?.data?.message || 'Failed to advance round');

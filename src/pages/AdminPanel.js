@@ -16,7 +16,8 @@ import {
   UserX,
   Shield,
   Crown,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { tournamentService, newsService } from '../services';
@@ -28,12 +29,13 @@ import toast from 'react-hot-toast';
 // Import components with error boundary
 const UserManagement = React.lazy(() => import('../components/admin/UserManagement'));
 const TournamentManagement = React.lazy(() => import('../components/admin/TournamentManagement'));
+const AdminTournamentDashboard = React.lazy(() => import('../components/admin/AdminTournamentDashboard'));
 const MatchManagement = React.lazy(() => import('../components/admin/MatchManagement'));
 const NewsManagement = React.lazy(() => import('../components/admin/NewsManagement'));
 // --- Kết thúc thay đổi ---
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -85,6 +87,15 @@ const AdminPanel = () => {
   }
 
   const tabs = [
+    { 
+      id: 'dashboard', 
+      name: 'Tournament Dashboard', 
+      icon: BarChart3, 
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-100',
+      description: 'Overview and analytics of all tournaments',
+      component: AdminTournamentDashboard
+    },
     { 
       id: 'users', 
       name: 'User Management', 
