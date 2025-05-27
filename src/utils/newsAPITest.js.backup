@@ -1,0 +1,127 @@
+// File này để test News API trực tiếp từ browser console
+// Sử dụng: import('./newsAPITest.js').then(module => module.testNewsAPI())
+
+import newsService from '../services/newsService';
+
+// Test cơ bản để kiểm tra API
+export const testNewsAPI = async () => {
+  console.log('🚀 Starting News API Tests...');
+  
+  try {
+    // Test 1: getAllNews
+    console.log('📰 Test 1: getAllNews');
+    const allNews = await newsService.getAllNews();
+    console.log('✅ getAllNews result:', allNews);
+    console.log('✅ Type:', typeof allNews);
+    console.log('✅ Is Array:', Array.isArray(allNews));
+    
+    if (Array.isArray(allNews) && allNews.length > 0) {
+      console.log('✅ Sample news item:', allNews[0]);
+      console.log('✅ Available fields:', Object.keys(allNews[0]));
+      
+      // Test 2: getNewsById
+      console.log('📖 Test 2: getNewsById');
+      const singleNews = await newsService.getNewsById(allNews[0].id);
+      console.log('✅ getNewsById result:', singleNews);
+    }
+    
+    return { success: true, data: allNews };
+  } catch (error) {
+    console.error('❌ API Test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test tạo tin tức (cẩn thận với việc này)
+export const testCreateNews = async () => {
+  console.log('🚀 Testing createNews...');
+  
+  const testData = {
+    name: `Test News - ${new Date().toISOString()}`,
+    shortDescription: 'This is a test news article',
+    content: 'This is the content of the test news article. It contains more detailed information.'
+  };
+  
+  try {
+    const result = await newsService.createNews(testData);
+    console.log('✅ createNews success:', result);
+    
+    // Cleanup - delete the test news
+    if (result.id) {
+      console.log('🗑️ Cleaning up test news...');
+      await newsService.deleteNews(result.id);
+      console.log('✅ Test news cleaned up');
+    }
+    
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('❌ createNews failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test update tin tức
+export const testUpdateNews = async (newsId, newData) => {
+  console.log('🚀 Testing updateNews...');
+  
+  try {
+    const result = await newsService.updateNews(newsId, newData);
+    console.log('✅ updateNews success:', result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('❌ updateNews failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test delete tin tức (cẩn thận!)
+export const testDeleteNews = async (newsId) => {
+  console.log('🚀 Testing deleteNews...');
+  console.log('⚠️ Warning: This will permanently delete the news article!');
+  
+  try {
+    const result = await newsService.deleteNews(newsId);
+    console.log('✅ deleteNews success:', result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('❌ deleteNews failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Chạy tất cả tests an toàn
+export const runSafeTests = async () => {
+  console.log('🛡️ Running safe tests only...');
+  
+  const results = {
+    getAllNews: await testNewsAPI(),
+    createAndDeleteTest: await testCreateNews()
+  };
+  
+  console.log('📋 Test Results:', results);
+  return results;
+};
+
+// Export để có thể sử dụng từ browser console
+if (typeof window !== 'undefined') {
+  window.newsAPITests = {
+    testNewsAPI,
+    testCreateNews,
+    testUpdateNews,
+    testDeleteNews,
+    runSafeTests
+  };
+  
+  console.log('📝 News API Tests loaded! Available functions:');
+  console.log('   - window.newsAPITests.testNewsAPI()');
+  console.log('   - window.newsAPITests.testCreateNews()');
+  console.log('   - window.newsAPITests.runSafeTests()');
+}
+
+export default {
+  testNewsAPI,
+  testCreateNews,
+  testUpdateNews,
+  testDeleteNews,
+  runSafeTests
+};

@@ -1,0 +1,243 @@
+// News API Debug Helper
+// Sử dụng file này để kiểm tra và debug các vấn đề với News API
+
+import newsService from '../services/newsService';
+
+const NewsAPIDebugger = {
+  // Test kết nối với News API
+  async testNewsAPI() {
+    console.log('🔧 [NEWS DEBUG] Testing News API connection...');
+    
+    try {
+      // Test getAllNews
+      console.log('📰 [NEWS DEBUG] Testing getAllNews...');
+      const allNews = await newsService.getAllNews();
+      console.log('✅ [NEWS DEBUG] getAllNews response:', JSON.stringify(allNews, null, 2));
+      console.log('✅ [NEWS DEBUG] Data type:', typeof allNews);
+      console.log('✅ [NEWS DEBUG] Is array:', Array.isArray(allNews));
+      
+      if (Array.isArray(allNews)) {
+        if (allNews.length > 0) {
+          console.log('✅ [NEWS DEBUG] Found', allNews.length, 'news items');
+          console.log('✅ [NEWS DEBUG] Sample news item:', JSON.stringify(allNews[0], null, 2));
+          console.log('✅ [NEWS DEBUG] Available fields:', Object.keys(allNews[0]));
+          
+          // Test getNewsById với item đầu tiên
+          const firstNewsId = allNews[0].id;
+          if (firstNewsId) {
+            console.log('📖 [NEWS DEBUG] Testing getNewsById with ID:', firstNewsId);
+            try {
+              const singleNews = await newsService.getNewsById(firstNewsId);
+              console.log('✅ [NEWS DEBUG] getNewsById response:', JSON.stringify(singleNews, null, 2));
+            } catch (getByIdError) {
+              console.warn('⚠️ [NEWS DEBUG] getNewsById failed:', getByIdError.message);
+            }
+          } else {
+            console.warn('⚠️ [NEWS DEBUG] First news item has no ID field');
+          }
+        } else {
+          console.log('⚠️ [NEWS DEBUG] News array is empty - no existing news articles');
+        }
+        return true;
+      } else {
+        console.error('❌ [NEWS DEBUG] API returned non-array data:', JSON.stringify(allNews, null, 2));
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ [NEWS DEBUG] API Error:', JSON.stringify({
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      }, null, 2));
+      return false;
+    }
+  },
+
+  // Test tạo tin tức mới
+  async testCreateNews() {
+    console.log('🔧 [NEWS DEBUG] Testing createNews...');
+    
+    const testNewsData = {
+      name: 'Test News Article - ' + new Date().toISOString(),
+      shortDescription: 'This is a test news article created by the debug tool.',
+      content: 'This is the full content of the test news article. It contains more detailed information about the test.'
+    };
+    
+    console.log('📝 [NEWS DEBUG] Test data to create:', JSON.stringify(testNewsData, null, 2));
+    
+    try {
+      const result = await newsService.createNews(testNewsData);
+      console.log('✅ [NEWS DEBUG] createNews success:', JSON.stringify(result, null, 2));
+      
+      // Thử xóa bài test này để không làm rối database
+      const newsId = result?.id || result?.data?.id;
+      if (newsId) {
+        console.log('🗑️ [NEWS DEBUG] Cleaning up test news with ID:', newsId);
+        try {
+          await newsService.deleteNews(newsId);
+          console.log('✅ [NEWS DEBUG] Test news cleaned up successfully');
+        } catch (deleteError) {
+          console.warn('⚠️ [NEWS DEBUG] Could not clean up test news:', deleteError.message);
+        }
+      } else {
+        console.warn('⚠️ [NEWS DEBUG] No ID found in create response, cannot cleanup');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ [NEWS DEBUG] createNews Error:', JSON.stringify({
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      }, null, 2));
+      return false;
+    }
+  },
+
+  // Kiểm tra cấu trúc response từ API
+  async analyzeAPIResponse() {
+    console.log('🔧 [NEWS DEBUG] Analyzing API response structure...');
+    
+    try {
+      const response = await newsService.getAllNews();
+      
+      const analysis = {
+        responseType: typeof response,
+        isArray: Array.isArray(response),
+        length: response?.length || 0,
+        hasData: response?.data !== undefined,
+        hasItems: response?.items !== undefined,
+        structure: null,
+        sampleItem: null,
+        itemFields: []
+      };
+      
+      if (Array.isArray(response)) {
+        analysis.structure = 'Direct Array';
+        if (response.length > 0) {
+          analysis.sampleItem = response[0];
+          analysis.itemFields = Object.keys(response[0]);
+          console.log('✅ [NEWS DEBUG] Sample item details:', JSON.stringify(response[0], null, 2));
+        }
+      } else if (response?.data && Array.isArray(response.data)) {
+        analysis.structure = 'Wrapped in data property';
+        if (response.data.length > 0) {
+          analysis.sampleItem = response.data[0];
+          analysis.itemFields = Object.keys(response.data[0] || {});
+          console.log('✅ [NEWS DEBUG] Sample item details:', JSON.stringify(response.data[0], null, 2));
+        }
+      } else if (response?.items && Array.isArray(response.items)) {
+        analysis.structure = 'Wrapped in items property';
+        if (response.items.length > 0) {
+          analysis.sampleItem = response.items[0];
+          analysis.itemFields = Object.keys(response.items[0] || {});
+          console.log('✅ [NEWS DEBUG] Sample item details:', JSON.stringify(response.items[0], null, 2));
+        }
+      } else {
+        analysis.structure = 'Unknown structure';
+        console.log('⚠️ [NEWS DEBUG] Full response details:', JSON.stringify(response, null, 2));
+      }
+      
+      console.log('📊 [NEWS DEBUG] Complete Analysis:', JSON.stringify(analysis, null, 2));
+      return analysis;
+    } catch (error) {
+      console.error('❌ [NEWS DEBUG] Analysis Error:', error);
+      return null;
+    }
+  },
+
+  // Kiểm tra backend có sẵn không
+  async checkBackendHealth() {
+    console.log('🏥 [NEWS DEBUG] Checking backend health...');
+    
+    try {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      console.log('🔗 [NEWS DEBUG] Testing backend URL:', baseUrl);
+      
+      // Thử gọi đến health endpoint trước
+      try {
+        const healthResponse = await fetch(`${baseUrl}/health`, { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (healthResponse.ok) {
+          const data = await healthResponse.json();
+          console.log('✅ [NEWS DEBUG] Backend health check passed:', JSON.stringify(data, null, 2));
+          return true;
+        }
+      } catch (healthError) {
+        console.log('⚠️ [NEWS DEBUG] Health endpoint not available, trying alternative...');
+      }
+      
+      // Nếu health endpoint không có, thử ping basic endpoint
+      try {
+        const pingResponse = await fetch(`${baseUrl}/api/v1`, { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('🔍 [NEWS DEBUG] API ping response status:', pingResponse.status);
+        if (pingResponse.status < 500) {
+          console.log('✅ [NEWS DEBUG] Backend is reachable (status:', pingResponse.status, ')');
+          return true;
+        }
+      } catch (pingError) {
+        console.log('⚠️ [NEWS DEBUG] API endpoint also not reachable');
+      }
+      
+      console.log('❌ [NEWS DEBUG] Backend appears to be down');
+      return false;
+    } catch (error) {
+      console.error('❌ [NEWS DEBUG] Backend unreachable:', error.message);
+      return false;
+    }
+  },
+
+  // Chạy tất cả tests
+  async runAllTests() {
+    console.log('🚀 [NEWS DEBUG] Running all News API tests...');
+    
+    const results = {
+      backendHealth: await this.checkBackendHealth(),
+      apiConnection: await this.testNewsAPI(),
+      apiAnalysis: await this.analyzeAPIResponse(),
+      createNews: await this.testCreateNews()
+    };
+    
+    console.log('📋 [NEWS DEBUG] All tests completed:', JSON.stringify(results, null, 2));
+    
+    // Cải tiến logic đánh giá kết quả
+    const hasApiConnection = results.apiConnection === true;
+    const hasWorkingCreate = results.createNews === true;
+    const hasAnalysis = results.apiAnalysis !== null && typeof results.apiAnalysis === 'object';
+    
+    if (hasApiConnection && hasWorkingCreate && hasAnalysis) {
+      console.log('🎉 [NEWS DEBUG] SUCCESS: All core functionality is working! API is fully operational.');
+    } else if (hasApiConnection && hasAnalysis) {
+      console.log('✅ [NEWS DEBUG] SUCCESS: API connection and data retrieval work. Create functionality may have issues.');
+    } else if (hasApiConnection) {
+      console.log('⚠️ [NEWS DEBUG] PARTIAL: API connection works but some operations failed.');
+    } else {
+      console.log('❌ [NEWS DEBUG] FAILURE: Core API functionality is not working.');
+    }
+    
+    // Cải tiến gợi ý dựa trên kết quả thực tế
+    if (!hasApiConnection) {
+      console.log('💡 [NEWS DEBUG] SUGGESTION: API connection failed. Check backend server, URL configuration, and authentication.');
+    } else if (!hasWorkingCreate) {
+      console.log('💡 [NEWS DEBUG] SUGGESTION: Create operation failed. Check permissions, request format, or backend create endpoint.');
+    } else if (!hasAnalysis) {
+      console.log('💡 [NEWS DEBUG] SUGGESTION: Response analysis failed. API structure may be unexpected.');
+    }
+    
+    return results;
+  }
+};
+
+export default NewsAPIDebugger;

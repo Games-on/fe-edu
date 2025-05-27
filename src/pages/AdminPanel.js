@@ -17,7 +17,8 @@ import {
   Shield,
   Crown,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  Bug
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { tournamentService, newsService } from '../services';
@@ -32,6 +33,7 @@ const TournamentManagement = React.lazy(() => import('../components/admin/Tourna
 const AdminTournamentDashboard = React.lazy(() => import('../components/admin/AdminTournamentDashboard'));
 const MatchManagement = React.lazy(() => import('../components/admin/MatchManagement'));
 const NewsManagement = React.lazy(() => import('../components/admin/NewsManagement'));
+// const NewsDebugPanel = React.lazy(() => import('../components/debug/NewsDebugPanel')); // DISABLED FOR PRODUCTION
 // --- Kết thúc thay đổi ---
 
 const AdminPanel = () => {
@@ -131,7 +133,18 @@ const AdminPanel = () => {
       bgColor: 'bg-purple-100',
       description: 'Create and publish news articles',
       component: NewsManagement // Thêm component vào đây
+    },
+    /*
+    { 
+      id: 'debug', 
+      name: 'News Debug', 
+      icon: Bug, 
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
+      description: 'Debug and test news API functionality',
+      component: NewsDebugPanel
     }
+    */ // DISABLED FOR PRODUCTION
   ];
 
   const stats = [
@@ -237,7 +250,7 @@ const AdminPanel = () => {
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tabs.map((tab) => (
               <button
                 key={tab.id}

@@ -13,33 +13,28 @@ import {
   MapPin,
   Play,
   Pause,
-  AlertTriangle,
-  Bug
+  AlertTriangle
 } from 'lucide-react';
 import { tournamentServiceFixed as tournamentService } from '../../services/tournamentServiceFixed';
 import LoadingSpinner from '../LoadingSpinner';
 import TournamentCreateForm from '../tournament/TournamentCreateForm';
-import TournamentDebugPanel from '../tournament/TournamentDebugPanel';
 import { 
   formatDate, 
   getStatusColor, 
   getSportTypeLabel,
   getTournamentStatusLabel 
 } from '../../utils/helpers';
-import TournamentAPITester from '../debug/TournamentAPITester';
 import { QUERY_KEYS } from '../../utils/constants';
-// import toast from 'react-hot-toast'; // DISABLED - causes DOM manipulation issues
 
 const TournamentManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const queryClient = useQueryClient();
 
-  // Safe notification system - no DOM manipulation
+  // Safe notification system
   const showNotification = (type, message) => {
     console.log(`${type.toUpperCase()}: ${message}`);
     const notification = { id: Date.now(), type, message };
@@ -68,8 +63,6 @@ const TournamentManagement = () => {
       staleTime: 5 * 60 * 1000,
       keepPreviousData: true,
       select: (response) => {
-        console.log('🔍 [TournamentManagement] Raw API response:', response);
-        
         // XỬ LÝ CÁC TRƯỜNG HỢP RESPONSE KHÁC NHAU
         
         // Trường hợp 1: Response theo format chuẩn từ backend
@@ -86,7 +79,7 @@ const TournamentManagement = () => {
           };
         }
         
-        // Trường hợp 2: Response là array trực tiếp (có thể do response interceptor)
+        // Trường hợp 2: Response là array trực tiếp
         if (Array.isArray(response)) {
           return {
             data: response,
@@ -117,7 +110,6 @@ const TournamentManagement = () => {
         }
         
         // Trường hợp 4: Fallback - empty state
-        console.warn('⚠️ [TournamentManagement] Unexpected response format, returning empty state');
         return {
           data: [],
           pagination: {
@@ -128,9 +120,6 @@ const TournamentManagement = () => {
             hasPrev: false
           }
         };
-      },
-      onError: (error) => {
-        console.error('❌ [TournamentManagement] Query error:', error);
       }
     }
   );
@@ -179,7 +168,6 @@ const TournamentManagement = () => {
   };
 
   const handleCreateSuccess = (newTournament) => {
-    console.log('Tournament created successfully:', newTournament);
     queryClient.invalidateQueries(QUERY_KEYS.TOURNAMENTS);
   };
 
@@ -214,7 +202,6 @@ const TournamentManagement = () => {
 
   // Render error state
   if (error) {
-    console.error('🚫 [TournamentManagement] Component error:', error);
     return (
       <div className="text-center py-8">
         <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -239,13 +226,6 @@ const TournamentManagement = () => {
     hasPrev: false
   };
 
-  console.log('📊 [TournamentManagement] Render data:', {
-    tournamentData,
-    pagination,
-    isArray: Array.isArray(tournamentData),
-    length: tournamentData.length
-  });
-
   return (
     <div className="space-y-6">
       {/* Notifications */}
@@ -269,6 +249,7 @@ const TournamentManagement = () => {
           ))}
         </div>
       )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -279,13 +260,6 @@ const TournamentManagement = () => {
           <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
             {pagination.totalItems} Tournaments
           </div>
-          <button 
-            onClick={() => setShowDebugPanel(!showDebugPanel)}
-            className="btn-secondary"
-            title="Toggle Debug Panel"
-          >
-            <Bug className="h-4 w-4" />
-          </button>
           <button 
             onClick={() => setShowCreateModal(true)}
             className="btn-primary"
@@ -340,32 +314,6 @@ const TournamentManagement = () => {
         </form>
       </div>
 
-      {/* API Tester - for debugging */}
-      {showDebugPanel && (
-        <div className="mb-6">
-          <TournamentAPITester />
-        </div>
-      )}
-
-      {/* Debug Info Panel (ẩn theo mặc định) */}
-      {showDebugPanel && (
-        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-800 mb-2">🐛 Debug Information</h3>
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap">
-            {JSON.stringify({
-              tournaments: tournaments,
-              tournamentData: tournamentData,
-              pagination: pagination,
-              isArray: Array.isArray(tournamentData),
-              length: tournamentData.length,
-              searchTerm,
-              statusFilter,
-              page
-            }, null, 2)}
-          </pre>
-        </div>
-      )}
-
       {/* Tournaments Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {isLoading ? (
@@ -377,12 +325,6 @@ const TournamentManagement = () => {
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <p className="text-red-600 mb-2">Data format error: tournaments data is not an array</p>
             <p className="text-sm text-gray-500">Expected: Array, Received: {typeof tournamentData}</p>
-            <button 
-              onClick={() => setShowDebugPanel(true)}
-              className="mt-4 btn-secondary"
-            >
-              Show Debug Info
-            </button>
           </div>
         ) : tournamentData.length === 0 ? (
           <div className="p-8 text-center">
@@ -537,9 +479,6 @@ const TournamentManagement = () => {
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
       />
-      
-      {/* Debug Panel */}
-      {showDebugPanel && <TournamentDebugPanel />}
     </div>
   );
 };

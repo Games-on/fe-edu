@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Trophy, Users, Calendar, Target, ArrowRight, Play, Star } from 'lucide-react';
 import { tournamentServiceFixed as tournamentService } from '../services/tournamentServiceFixed';
-import { newsService, dashboardService } from '../services';
+import newsService from '../services/newsService'; // Import trực tiếp từ file riêng
+import { dashboardService } from '../services';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
@@ -62,24 +63,40 @@ const HomePage = () => {
     }
   );
 
-  const { data: news, isLoading: newsLoading } = useQuery(
+  const { data: news, isLoading: newsLoading, error: newsError } = useQuery(
     'recent-news',
     () => newsService.getAllNews(),
     { 
       staleTime: 5 * 60 * 1000,
       select: (data) => {
-        console.log('News API Response:', data);
         // Handle different response formats
         let newsArray = [];
+        
         if (Array.isArray(data)) {
           newsArray = data;
         } else if (data?.data && Array.isArray(data.data)) {
           newsArray = data.data;
+        } else if (data?.content && Array.isArray(data.content)) {
+          newsArray = data.content;
+        } else if (data?.news && Array.isArray(data.news)) {
+          newsArray = data.news;
         } else {
-          console.warn('News data is not an array:', data);
-          newsArray = [];
+          // Try to find any array in the response
+          if (data && typeof data === 'object') {
+            const keys = Object.keys(data);
+            for (const key of keys) {
+              if (Array.isArray(data[key])) {
+                newsArray = data[key];
+                break;
+              }
+            }
+          }
         }
+        
         return newsArray.slice(0, 3); // Take only first 3 news items
+      },
+      onError: (error) => {
+        console.error('Error loading news:', error);
       }
     }
   );
@@ -310,29 +327,137 @@ const HomePage = () => {
           </div>
 
           {newsLoading ? (
-            <LoadingSpinner />
+            <div className="text-center">
+              <LoadingSpinner />
+              <p className="mt-4 text-gray-600">Loading news...</p>
+            </div>
+          ) : newsError ? (
+            <div className="text-center">
+              <p className="text-red-600">Error loading news: {newsError.message}</p>
+              <p className="text-gray-600 mt-2">Please check if backend is running.</p>
+            </div>
+          ) : !news || news.length === 0 ? (
+            <div className="text-center">
+              <p className="text-gray-600">No news available at the moment.</p>
+              <p className="text-sm text-gray-500 mt-2">Check console for API response details.</p>
+              <button 
+                onClick={() => {
+                  console.log('🔄 [HomePage] Manual news refresh triggered');
+                  window.location.reload();
+                }}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                🔄 Refresh News
+              </button>
+              <br />
+              <button 
+                onClick={async () => {
+                  console.log('🧪 [HomePage] Direct API test triggered');
+                  try {
+                    const directResult = await newsService.getAllNews();
+                    
+                    // Force detailed logging
+                    console.log('=== DIRECT API TEST RESULTS ===');
+                    console.log('Type of result:', typeof directResult);
+                    console.log('Is array:', Array.isArray(directResult));
+                    console.log('Result keys:', directResult ? Object.keys(directResult) : 'null');
+                    
+                    // Try different ways to access the data
+                    if (Array.isArray(directResult)) {
+                      console.log('✅ Direct array with', directResult.length, 'items');
+                      if (directResult.length > 0) {
+                        console.log('First item:', directResult[0]);
+                        console.log('First item keys:', Object.keys(directResult[0]));
+                        console.log('First item name:', directResult[0].name);
+                        console.log('First item content:', directResult[0].content);
+                      }
+                    } else {
+                      console.log('Not direct array, checking properties...');
+                      
+                      // Check various possible structures
+                      const possibleKeys = ['data', 'content', 'news', 'items', 'results'];
+                      for (const key of possibleKeys) {
+                        if (directResult && directResult[key]) {
+                          console.log(`Found ${key}:`, directResult[key]);
+                          if (Array.isArray(directResult[key])) {
+                            console.log(`${key} is array with ${directResult[key].length} items`);
+                            if (directResult[key].length > 0) {
+                              console.log(`First ${key} item:`, directResult[key][0]);
+                            }
+                          }
+                        }
+                      }
+                    }
+                    
+                    // Show a user-friendly alert
+                    if (Array.isArray(directResult) && directResult.length > 0) {
+                      alert(`✅ Found ${directResult.length} news items! Check console for details.`);
+                    } else if (directResult?.data && Array.isArray(directResult.data) && directResult.data.length > 0) {
+                      alert(`✅ Found ${directResult.data.length} news items in data property! Check console.`);
+                    } else {
+                      alert('❌ No news items found in API response. Check console for details.');
+                    }
+                    
+                    console.log('=== END DIRECT API TEST ===');
+                  } catch (error) {
+                    console.error('🧪 [HomePage] Direct API error:', error);
+                    alert('❌ Direct API failed - check console for error details');
+                  }
+                }}
+                className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                🧪 Test API Direct
+              </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {(news || []).map((article) => (
-                <div key={article.id} className="card hover:shadow-lg transition-shadow duration-300">
-                  <div className="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center">
-                    <Star className="h-16 w-16 text-white" />
+              {news.map((article, index) => {
+                console.log('📰 [HomePage] Rendering article:', article);
+                return (
+                  <div key={article.id || index} className="card hover:shadow-lg transition-shadow duration-300">
+                    {/* Display image from attachments if available */}
+                    {article.attachments && article.attachments.length > 0 ? (
+                      <div className="h-40 rounded-lg mb-4 overflow-hidden bg-gray-200">
+                        <img
+                          src={newsService.getImageUrl(article.attachments[0].url)}
+                          alt={article.name || 'News image'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.parentElement.innerHTML = '<div class="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center"><svg class="h-16 w-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg></div>';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-r from-sports-green to-sports-pink h-40 rounded-lg mb-4 flex items-center justify-center">
+                        <Star className="h-16 w-16 text-white" />
+                      </div>
+                    )}
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {article.name || article.title || 'No Title'}
+                    </h3>
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {article.shortDescription || article.content || 'No Content'}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">
+                        {article.createdAt ? formatDate(article.createdAt) : 'Recent'}
+                      </span>
+                      {article.id ? (
+                        <Link
+                          to={`/news/${article.id}`}
+                          className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center space-x-1"
+                        >
+                          <span>Read More</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400 text-sm">No Link</span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{article.title}</h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">{article.content}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      {formatDate(article.createdAt)}
-                    </span>
-                    <Link
-                      to={`/news/${article.id}`}
-                      className="text-primary-600 hover:text-primary-700 font-medium text-sm"
-                    >
-                      Read More
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
