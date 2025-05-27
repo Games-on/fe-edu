@@ -6,6 +6,7 @@ import {
   passwordResetService, 
   roleManagementService 
 } from './userManagement';
+import { dashboardService } from './dashboardService';
 
 // ==================== AUTH SERVICE ====================
 export const authService = {
@@ -414,6 +415,9 @@ export {
   roleManagementService
 };
 
+// ==================== DASHBOARD SERVICE ====================
+export { dashboardService };
+
 // ==================== EXPORT ALL SERVICES ====================
 export const apiServices = {
   auth: authService,
@@ -430,6 +434,7 @@ export const apiServices = {
   roleManagement: roleManagementService,
   system: systemService,
   debug: debugService,
+  dashboard: dashboardService,
 };
 
 // For backward compatibility

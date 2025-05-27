@@ -3,11 +3,30 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Trophy, Users, Calendar, Target, ArrowRight, Play, Star } from 'lucide-react';
 import { tournamentServiceFixed as tournamentService } from '../services/tournamentServiceFixed';
-import { newsService } from '../services';
+import { newsService, dashboardService } from '../services';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
 const HomePage = () => {
+  // Get dashboard statistics
+  const { data: dashboardStats, isLoading: statsLoading } = useQuery(
+    'dashboard-stats',
+    () => dashboardService.getDashboardStats(),
+    {
+      staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+      select: (response) => {
+        console.log('📊 [HomePage] Dashboard Stats Response:', response);
+        console.log('📊 [HomePage] Dashboard Stats Data:', response?.data);
+        console.log('📊 [HomePage] Full Response Structure:', JSON.stringify(response, null, 2));
+        return response?.data || null;
+      },
+      // Add mock data fallback when API fails
+      onError: (error) => {
+        console.warn('⚠️ [HomePage] Dashboard stats API failed, using mock data:', error);
+      }
+    }
+  );
+
   const { data: tournaments, isLoading: tournamentsLoading } = useQuery(
     ['tournaments', { page: 1, limit: 3 }],
     () => tournamentService.getAllTournaments({ page: 1, limit: 3 }),
@@ -65,12 +84,45 @@ const HomePage = () => {
     }
   );
 
-  const stats = [
-    { icon: Trophy, label: 'Active Tournaments', value: '15+', color: 'text-sports-orange' },
-    { icon: Users, label: 'Registered Teams', value: '200+', color: 'text-sports-green' },
-    { icon: Calendar, label: 'Matches Played', value: '500+', color: 'text-sports-purple' },
-    { icon: Target, label: 'Success Rate', value: '98%', color: 'text-sports-pink' },
-  ];
+  // Create stats array from real data or fallback
+  const stats = React.useMemo(() => {
+    if (dashboardStats) {
+      return [
+        { 
+          icon: Trophy, 
+          label: 'Active Tournaments', 
+          value: dashboardStats.activeTournaments?.toString() || '0', 
+          color: 'text-sports-orange' 
+        },
+        { 
+          icon: Users, 
+          label: 'Registered Teams', 
+          value: dashboardStats.registeredTeams?.toString() || '0', 
+          color: 'text-sports-green' 
+        },
+        { 
+          icon: Calendar, 
+          label: 'Matches Played', 
+          value: dashboardStats.matchesPlayed?.toString() || '0', 
+          color: 'text-sports-purple' 
+        },
+        { 
+          icon: Target, 
+          label: 'Success Rate', 
+          value: dashboardStats.successRate ? `${Math.round(dashboardStats.successRate)}%` : '0%', 
+          color: 'text-sports-pink' 
+        },
+      ];
+    }
+    
+    // Fallback stats when API is loading or failed
+    return [
+      { icon: Trophy, label: 'Active Tournaments', value: '-', color: 'text-sports-orange' },
+      { icon: Users, label: 'Registered Teams', value: '-', color: 'text-sports-green' },
+      { icon: Calendar, label: 'Matches Played', value: '-', color: 'text-sports-purple' },
+      { icon: Target, label: 'Success Rate', value: '-', color: 'text-sports-pink' },
+    ];
+  }, [dashboardStats]);
 
   const features = [
     {
@@ -135,19 +187,26 @@ const HomePage = () => {
       {/* Stats Section */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="bg-gray-100 p-4 rounded-full">
-                    <stat.icon className={`h-8 w-8 ${stat.color}`} />
+          {statsLoading ? (
+            <div className="text-center">
+              <LoadingSpinner />
+              <p className="mt-4 text-gray-600">Loading statistics...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-gray-100 p-4 rounded-full">
+                      <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                    </div>
                   </div>
+                  <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                  <div className="text-gray-600">{stat.label}</div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
