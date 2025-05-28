@@ -135,24 +135,23 @@ export const clearInvalidTokens = () => {
 export const initializeLocalStorage = () => {
   console.log('🚀 Initializing localStorage management...');
   
-  // FORCE clear for production builds
-  const productionCleared = forceProductionClear();
+  // 🔐 COMMENTED OUT: Auto-clear authentication (for testing)
+  // console.log('🧹 Clearing authentication for fresh start...');
+  // localStorage.removeItem(TOKEN_KEY);
+  // localStorage.removeItem('user');
+  // localStorage.removeItem('refreshToken');
   
-  if (!productionCleared) {
-    // Only check environment change if not production
-    clearLocalStorageOnEnvChange();
-  }
-  
-  // Clear invalid tokens
-  const hadInvalidToken = clearInvalidTokens();
-  
-  if (hadInvalidToken) {
-    console.log('⚠️ Invalid authentication data was cleared');
-  }
+  // Clear any other auth-related data
+  // const authKeys = ['token', 'auth', 'session', 'login', 'admin'];
+  // Object.keys(localStorage).forEach(key => {
+  //   if (authKeys.some(authKey => key.toLowerCase().includes(authKey))) {
+  //     localStorage.removeItem(key);
+  //   }
+  // });
   
   // Update build timestamp
   const currentTimestamp = getBuildTimestamp();
   localStorage.setItem(BUILD_TIMESTAMP_KEY, currentTimestamp);
   
-  console.log('✅ localStorage management initialized');
+  console.log('✅ LocalStorage management initialized - auth tokens preserved');
 };

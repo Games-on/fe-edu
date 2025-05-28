@@ -49,6 +49,8 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
+    // Just check auth state without any force clearing
+    // localStorage is already cleared by localStorageManager
     checkAuth();
   }, []);
 

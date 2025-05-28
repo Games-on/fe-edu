@@ -201,7 +201,7 @@ export const tournamentKnockoutService = {
   advanceRound: async (tournamentId) => {
     console.log('⏭️ [TournamentKnockout] Advancing round for tournament:', tournamentId);
     try {
-      const response = await apiClient.post(`/api/tournaments/${tournamentId}/advance-round`);
+      const response = await apiClient.get(`/api/tournaments/${tournamentId}/current-round`);
       console.log('✅ [TournamentKnockout] Advance round success:', response);
       return response;
     } catch (error) {

@@ -1,33 +1,61 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, User, Eye, ArrowRight, Plus, Shield } from 'lucide-react';
+import { Search, Calendar, User, Eye, ArrowRight, Plus, Shield, Bug } from 'lucide-react';
 import { newsService } from '../services';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import NewsAPITester from '../components/debug/NewsAPITester';
 import { formatDate, truncateText } from '../utils/helpers';
 
 const NewsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDebugTester, setShowDebugTester] = useState(false);
   const { user } = useAuth();
   
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: news, isLoading, error } = useQuery(
+  const { data: news, isLoading, error, refetch } = useQuery(
     ['news', searchTerm],
-    () => newsService.getAllNews(),
+    () => {
+      console.log('📰 NewsPage: Making API call...');
+      return newsService.getAllNews();
+    },
     {
       staleTime: 5 * 60 * 1000,
+      cacheTime: 0, // Disable cache temporarily for debugging
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+      onSuccess: (data) => {
+        console.log('📰 NewsPage: onSuccess callback, raw data:', data);
+      },
+      onError: (error) => {
+        console.error('📰 NewsPage: onError callback:', error);
+      },
       select: (data) => {
+        console.log('📰 NewsPage Raw data received:', data);
+        console.log('📰 NewsPage Data type:', typeof data);
+        console.log('📰 NewsPage Is Array:', Array.isArray(data));
+        
         // Kiểm tra data có tồn tại và là array không
-        if (!data || !Array.isArray(data)) {
-          console.log('NewsPage: Invalid data structure:', data);
+        if (!data) {
+          console.log('📰 NewsPage: No data received');
           return [];
         }
         
-        if (!searchTerm) return data;
+        if (!Array.isArray(data)) {
+          console.log('📰 NewsPage: Data is not array, structure:', data);
+          return [];
+        }
         
-        return data.filter(article => {
+        console.log('📰 NewsPage: Found', data.length, 'articles');
+        
+        if (!searchTerm) {
+          console.log('📰 NewsPage: Returning all articles');
+          return data;
+        }
+        
+        const filtered = data.filter(article => {
           // Sử dụng 'name' thay vì 'title' để khớp với API
           const title = article.name || article.title || '';
           const content = article.content || '';
@@ -37,6 +65,9 @@ const NewsPage = () => {
                  content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                  shortDescription.toLowerCase().includes(searchTerm.toLowerCase());
         });
+        
+        console.log('📰 NewsPage: Filtered to', filtered.length, 'articles');
+        return filtered;
       }
     }
   );
@@ -60,6 +91,15 @@ const NewsPage = () => {
   const featuredNews = news?.[0];
   const otherNews = news?.slice(1) || [];
 
+  // Log for debugging
+  console.log('📰 NewsPage Render - Current state:', {
+    isLoading,
+    error: error?.message,
+    newsLength: news?.length,
+    featuredNews: featuredNews?.name,
+    otherNewsLength: otherNews.length
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -74,6 +114,13 @@ const NewsPage = () => {
             </div>
             {/* {isAdmin && (
               <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowDebugTester(!showDebugTester)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <Bug className="h-4 w-4 mr-2" />
+                  Debug API
+                </button>
                 <div className="flex items-center space-x-2 text-sm text-primary-600">
                   <Shield className="h-4 w-4" />
                   <span>Quyền Admin</span>
@@ -92,6 +139,41 @@ const NewsPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Debug Tester - Only for Admins */}
+        {isAdmin && showDebugTester && (
+          <NewsAPITester />
+        )}
+
+        {/* Debug Info Panel - Only for Admins */}
+        {isAdmin && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h4 className="font-medium text-yellow-800 mb-2">🔍 Debug Info</h4>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <p><strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
+              <p><strong>Error:</strong> {error ? error.message : 'None'}</p>
+              <p><strong>News Data:</strong> {news ? `Array with ${news.length} items` : 'null/undefined'}</p>
+              <p><strong>Search Term:</strong> '{searchTerm}' {searchTerm ? '(filtering active)' : '(no filter)'}</p>
+              <p><strong>Featured News:</strong> {featuredNews ? featuredNews.name || 'No name' : 'None'}</p>
+              <p><strong>Other News:</strong> {otherNews.length} items</p>
+            </div>
+            <button
+              onClick={() => setShowDebugTester(!showDebugTester)}
+              className="mt-2 mr-2 text-xs bg-yellow-200 hover:bg-yellow-300 px-2 py-1 rounded"
+            >
+              {showDebugTester ? 'Hide' : 'Show'} API Tester
+            </button>
+            <button
+              onClick={() => {
+                console.log('🔄 Manual refetch triggered');
+                refetch();
+              }}
+              className="mt-2 text-xs bg-blue-200 hover:bg-blue-300 px-2 py-1 rounded"
+            >
+              Force Refresh Data
+            </button>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <form onSubmit={handleSearch} className="flex gap-4">
@@ -114,7 +196,22 @@ const NewsPage = () => {
         </div>
 
         {isLoading ? (
-          <LoadingSpinner />
+          <div className="text-center py-12">
+            <LoadingSpinner />
+            <p className="text-gray-600 mt-4">Đang tải tin tức...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <p>Lỗi khi tải tin tức: {error.message}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-2 btn-primary"
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
         ) : !news || news.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />

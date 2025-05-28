@@ -121,14 +121,14 @@ setTimeout(() => {
     // Create fresh root
     const root = ReactDOM.createRoot(rootElement);
     
-    // Render with absolute minimal structure
+    // Render with absolute minimal structure and force home route
     root.render(
       React.createElement(
         QueryClientProvider,
         { client: queryClient },
         React.createElement(
           BrowserRouter,
-          {},
+          { basename: '/' }, // Force base route
           React.createElement(
             AuthProvider,
             {},

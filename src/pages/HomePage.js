@@ -9,12 +9,41 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
 const HomePage = () => {
+  // 🔍 DEBUG: Track HomePage lifecycle
+  console.log('🏠 [HomePage] Component mounting at', new Date().toLocaleTimeString());
+  
+  React.useEffect(() => {
+    console.log('🏠 [HomePage] useEffect running at', new Date().toLocaleTimeString());
+    
+    // Check if there's any redirect logic hidden somewhere
+    const currentPath = window.location.pathname;
+    console.log('📍 [HomePage] Current path:', currentPath);
+    
+    // Monitor for any URL changes
+    const handleUrlChange = () => {
+      console.log('⚠️ [HomePage] URL changed to:', window.location.pathname, 'at', new Date().toLocaleTimeString());
+    };
+    
+    window.addEventListener('popstate', handleUrlChange);
+    
+    return () => {
+      console.log('🏠 [HomePage] Component unmounting at', new Date().toLocaleTimeString());
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
+
   // Get dashboard statistics
   const { data: dashboardStats, isLoading: statsLoading } = useQuery(
     'dashboard-stats',
     () => dashboardService.getDashboardStats(),
     {
       staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+      onSuccess: (data) => {
+        console.log('📊 [HomePage] Dashboard stats loaded at', new Date().toLocaleTimeString());
+      },
+      onError: (error) => {
+        console.log('⚠️ [HomePage] Dashboard stats error at', new Date().toLocaleTimeString(), error);
+      },
       select: (response) => {
         console.log('📊 [HomePage] Dashboard Stats Response:', response);
         console.log('📊 [HomePage] Dashboard Stats Data:', response?.data);

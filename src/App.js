@@ -44,21 +44,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Auth Only Route Component (redirect if already authenticated)
-const AuthOnlyRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-  
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return children;
-};
-
 // Admin Route Component
 const AdminRoute = ({ children }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -79,11 +64,23 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated, user } = useAuth();
+
+  // Simple debug logs
+  console.log('🎨 [App] Render state:', {
+    isLoading,
+    isAuthenticated,
+    userRole: user?.role,
+    currentPath: window.location.pathname,
+    timestamp: new Date().toLocaleTimeString()
+  });
 
   if (isLoading) {
+    console.log('⏳ [App] Showing loading spinner');
     return <LoadingSpinner />;
   }
+
+  console.log('✅ [App] Rendering routes');
 
   return (
     <>
@@ -96,33 +93,17 @@ function App() {
           <Route path="news" element={<NewsPage />} />
           <Route path="news/:id" element={<NewsDetailPage />} />
           
-
-           {/* Các route cho trang tĩnh */}
-            <Route path="/help-center" element={<HelpCenter />} />
-            <Route path="/contact-us" element={<ContactUs />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/about" element={<AboutUs />} />
-            
+          {/* Các route cho trang tĩnh */}
+          <Route path="help-center" element={<HelpCenter />} />
+          <Route path="contact-us" element={<ContactUs />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="terms-of-service" element={<TermsOfService />} />
+          <Route path="about" element={<AboutUs />} />
         </Route>
 
-        {/* Auth Routes */}
-        <Route 
-          path="/login" 
-          element={
-            <AuthOnlyRoute>
-              <LoginPage />
-            </AuthOnlyRoute>
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            <AuthOnlyRoute>
-              <RegisterPage />
-            </AuthOnlyRoute>
-          } 
-        />
+        {/* Auth Routes - Simple without any wrappers */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Routes */}
         <Route 
@@ -149,35 +130,35 @@ function App() {
           <Route index element={<AdminPanel />} />
         </Route>
 
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        
-        {/* Toast Notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 6000,
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
             },
-            success: {
-              duration: 6000,
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
-              },
+          },
+          error: {
+            duration: 6000,
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
             },
-            error: {
-              duration: 6000,
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
-              },
-            },
-          }}
-        />
+          },
+        }}
+      />
     </>
   );
 }
