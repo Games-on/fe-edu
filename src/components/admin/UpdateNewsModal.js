@@ -1,6 +1,6 @@
 // src/components/admin/UpdateNewsModal.js
 import React, { useState, useEffect } from 'react';
-import { X, UploadCloud, Image as ImageIcon } from 'lucide-react';
+import { X, UploadCloud, Image as ImageIcon } from 'lucide-react'; // Bỏ UploadCloud nếu không dùng icon upload nữa
 import newsService from '../../services/newsService';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../LoadingSpinner';
@@ -9,8 +9,8 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
   const [name, setName] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [content, setContent] = useState('');
-  const [files, setFiles] = useState([]); // Files mới để upload
-  const [currentAttachments, setCurrentAttachments] = useState([]); // Ảnh hiện có
+  // const [files, setFiles] = useState([]); // Đã loại bỏ state này
+  const [currentAttachments, setCurrentAttachments] = useState([]); // Giữ lại để hiển thị ảnh hiện có (chỉ hiển thị)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -19,8 +19,8 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
       setName(newsItem.name || '');
       setShortDescription(newsItem.shortDescription || '');
       setContent(newsItem.content || '');
-      setCurrentAttachments(newsItem.attachments || []); // Đặt ảnh hiện có
-      setFiles([]); // Đảm bảo files mới được reset
+      setCurrentAttachments(newsItem.attachments || []);
+      // setFiles([]); // Đã loại bỏ dòng này
       setErrors({});
     }
   }, [show, newsItem]);
@@ -31,10 +31,7 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
     if (!shortDescription.trim()) newErrors.shortDescription = 'Mô tả ngắn không được để trống.';
     if (!content.trim()) newErrors.content = 'Nội dung tin tức không được để trống.';
 
-    // Cảnh báo nếu không có ảnh nào còn lại sau khi xóa hoặc không thêm mới
-    if (files.length === 0 && currentAttachments.length === 0) {
-      newErrors.files = 'Bài viết nên có ít nhất một hình ảnh.';
-    }
+    // Không cần validate files nữa vì không cho phép upload/xóa ảnh
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -49,17 +46,17 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
 
     setIsSubmitting(true);
     try {
-      // Cập nhật thông tin chính của tin tức
+      // Chỉ cập nhật thông tin chính của tin tức
       await newsService.updateNews(newsItem.id, {
         name,
         shortDescription,
         content,
       });
 
-      // Upload files mới (nếu có)
-      if (files.length > 0) {
-        await newsService.uploadNewsAttachments(newsItem.id, files);
-      }
+      // Loại bỏ phần upload files mới
+      // if (files.length > 0) {
+      //   await newsService.uploadNewsAttachments(newsItem.id, files);
+      // }
 
       toast.success('Tin tức đã được cập nhật thành công!');
       onNewsUpdated(); // Gọi callback để refresh danh sách
@@ -72,26 +69,27 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
     }
   };
 
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(selectedFiles);
-    if (errors.files) {
-      setErrors(prev => ({ ...prev, files: undefined }));
-    }
-  };
+  // Loại bỏ handleFileChange và handleRemoveAttachment
+  // const handleFileChange = (e) => {
+  //   const selectedFiles = Array.from(e.target.files);
+  //   setFiles(selectedFiles);
+  //   if (errors.files) {
+  //     setErrors(prev => ({ ...prev, files: undefined }));
+  //   }
+  // };
 
-  const handleRemoveAttachment = async (attachmentId) => {
-    if (window.confirm('Bạn có chắc muốn xóa ảnh này?')) {
-      try {
-        await newsService.deleteAttachment(attachmentId);
-        setCurrentAttachments(prev => prev.filter(att => att.id !== attachmentId));
-        toast.success('Ảnh đã được xóa.');
-      } catch (err) {
-        console.error("Error deleting attachment:", err);
-        toast.error(`Không thể xóa ảnh: ${err.message || 'Vui lòng thử lại.'}`);
-      }
-    }
-  };
+  // const handleRemoveAttachment = async (attachmentId) => {
+  //   if (window.confirm('Bạn có chắc muốn xóa ảnh này?')) {
+  //     try {
+  //       await newsService.deleteAttachment(attachmentId);
+  //       setCurrentAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  //       toast.success('Ảnh đã được xóa.');
+  //     } catch (err) {
+  //       console.error("Error deleting attachment:", err);
+  //       toast.error(`Không thể xóa ảnh: ${err.message || 'Vui lòng thử lại.'}`);
+  //     }
+  //   }
+  // };
 
   if (!show) return null;
 
@@ -153,10 +151,10 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
               {errors.content && <p className="text-red-500 text-sm mt-1">{errors.content}</p>}
             </div>
 
-            {/* Current Attachments Display */}
+            {/* Current Attachments Display (Chỉ hiển thị, không có nút xóa) */}
             {currentAttachments.length > 0 && (
               <div>
-                <p className="input-label mb-2">Ảnh hiện có:</p>
+                <p className="input-label mb-2">Ảnh hiện tại:</p>
                 <div className="grid grid-cols-3 gap-2">
                   {currentAttachments.map(attachment => (
                     <div key={attachment.id} className="relative group w-full h-24 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-300">
@@ -165,7 +163,8 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
                         alt="attachment"
                         className="w-full h-full object-cover"
                       />
-                      <button
+                      {/* Loại bỏ nút xóa ảnh */}
+                      {/* <button
                         type="button"
                         onClick={() => handleRemoveAttachment(attachment.id)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -173,21 +172,24 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
                         disabled={isSubmitting}
                       >
                         <X className="h-4 w-4" />
-                      </button>
+                      </button> */}
                     </div>
                   ))}
                 </div>
+                {currentAttachments.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-2">Không có ảnh nào được đính kèm.</p>
+                )}
               </div>
             )}
 
-            {/* File Upload Section for new files */}
-            <div>
+            {/* Loại bỏ File Upload Section cho new files */}
+            {/* <div>
               <label htmlFor="files" className="input-label">Thêm ảnh mới (tối đa 5 ảnh bao gồm ảnh cũ)</label>
               <input
                 type="file"
                 id="files"
                 multiple
-                accept="image/*"
+                accept="image/
                 onChange={handleFileChange}
                 className="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
@@ -203,7 +205,7 @@ const UpdateNewsModal = ({ show, onClose, newsItem, onNewsUpdated }) => {
                   Đã chọn {files.length} file: {files.map(f => f.name).join(', ')}
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
               <button

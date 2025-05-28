@@ -261,12 +261,12 @@ const NewsManagement = () => {
                   </p>
 
                   {/* Article Meta Data */}
-                  <div className="flex items-center text-xs text-gray-500 mb-4 mt-auto">
+                  {/* <div className="flex items-center text-xs text-gray-500 mb-4 mt-auto">
                     <Calendar className="h-3 w-3 mr-1" />
                     <span>{formatDate(article.createdAt)}</span>
                     <User className="h-3 w-3 ml-4 mr-1" />
                     <span>{article.author || 'EduSports Team'}</span>
-                  </div>
+                  </div> */}
 
                   {/* Action Buttons for each article */}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
