@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react'; // Thêm Suspense vào đây
+import React, { useState, Suspense, useEffect } from 'react'; // Thêm useEffect
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Users, 
@@ -21,7 +21,7 @@ import {
   Bug
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { tournamentService, newsService } from '../services';
+import { tournamentService, newsService } from '../services'; // Đảm bảo services được import đúng
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 import toast from 'react-hot-toast';
@@ -37,7 +37,6 @@ const NewsManagement = React.lazy(() => import('../components/admin/NewsManageme
 // --- Kết thúc thay đổi ---
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -45,13 +44,91 @@ const AdminPanel = () => {
   const isAdmin = user?.role === 'ADMIN';
   const isOrganizer = user?.role === 'ORGANIZER';
 
+  // Định nghĩa tất cả các tabs
+  const allTabs = [
+    { 
+      id: 'dashboard', 
+      name: 'Tournament Dashboard', 
+      icon: BarChart3, 
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-100',
+      description: 'Overview and analytics of all tournaments',
+      component: AdminTournamentDashboard,
+      roles: ['ADMIN'] // Chỉ ADMIN mới thấy dashboard
+    },
+    { 
+      id: 'users', 
+      name: 'User Management', 
+      icon: Users, 
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      description: 'Manage user accounts and permissions',
+      component: UserManagement,
+      roles: ['ADMIN'] // Chỉ ADMIN mới thấy quản lý người dùng
+    },
+    { 
+      id: 'tournaments', 
+      name: 'Tournament Management', 
+      icon: Trophy, 
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
+      description: 'Create and manage tournaments',
+      component: TournamentManagement,
+      roles: ['ADMIN', 'ORGANIZER'] // ADMIN và ORGANIZER đều có thể quản lý giải đấu
+    },
+    // { 
+    //   id: 'matches', 
+    //   name: 'Match Management', 
+    //   icon: Calendar, 
+    //   color: 'text-green-600',
+    //   bgColor: 'bg-green-100',
+    //   description: 'Schedule and manage matches',
+    //   component: MatchManagement,
+    //   roles: ['ADMIN', 'ORGANIZER'] // ADMIN và ORGANIZER đều có thể quản lý trận đấu
+    // },
+    { 
+      id: 'news', 
+      name: 'News Management', 
+      icon: FileText, 
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+      description: 'Create and publish news articles',
+      component: NewsManagement,
+      roles: ['ADMIN', 'ORGANIZER'] // ADMIN và ORGANIZER đều có thể quản lý tin tức
+    },
+    /*
+    { 
+      id: 'debug', 
+      name: 'News Debug', 
+      icon: Bug, 
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
+      description: 'Debug and test news API functionality',
+      component: NewsDebugPanel,
+      roles: ['ADMIN'] // Chỉ ADMIN mới thấy debug panel
+    }
+    */
+  ];
 
+  // Lọc các tabs dựa trên vai trò của người dùng hiện tại
+  const accessibleTabs = allTabs.filter(tab => tab.roles.includes(user?.role));
+
+  // Xác định tab mặc định
+  const defaultTab = isAdmin ? 'dashboard' : 'tournaments'; // Nếu là admin thì mặc định là dashboard, nếu là organizer thì mặc định là tournaments
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  // useEffect để xử lý trường hợp user role thay đổi hoặc tab mặc định không còn tồn tại
+  useEffect(() => {
+    // Nếu tab hiện tại không còn trong danh sách các tab được phép truy cập
+    if (!accessibleTabs.some(tab => tab.id === activeTab)) {
+      // Chuyển về tab mặc định mới
+      setActiveTab(defaultTab);
+    }
+  }, [user?.role, accessibleTabs, defaultTab, activeTab]); // Chỉ chạy lại khi user role hoặc accessibleTabs thay đổi
 
   const { data: adminStats, isLoading: statsLoading } = useQuery(
     'admin-stats',
     async () => {
-      // This would be a real API call in production
-      // For now, it's mocked data:
       return {
         totalUsers: 15,
         totalTournaments: 10,
@@ -64,8 +141,6 @@ const AdminPanel = () => {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  // Đặt điều kiện kiểm tra quyền truy cập SAU KHI tất cả các Hooks được gọi.
-  // Nếu không có quyền, component sẽ return sớm, nhưng các Hooks đã được gọi rồi.
   if (!isAdmin && !isOrganizer) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -78,8 +153,7 @@ const AdminPanel = () => {
     );
   }
 
-  // Nếu dữ liệu thống kê đang tải, có thể hiển thị LoadingSpinner
-  if (statsLoading) {
+  if (statsLoading && isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner />
@@ -87,74 +161,15 @@ const AdminPanel = () => {
       </div>
     );
   }
-
-  const tabs = [
-    { 
-      id: 'dashboard', 
-      name: 'Tournament Dashboard', 
-      icon: BarChart3, 
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
-      description: 'Overview and analytics of all tournaments',
-      component: AdminTournamentDashboard
-    },
-    { 
-      id: 'users', 
-      name: 'User Management', 
-      icon: Users, 
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-      description: 'Manage user accounts and permissions',
-      component: UserManagement // Thêm component vào đây
-    },
-    { 
-      id: 'tournaments', 
-      name: 'Tournament Management', 
-      icon: Trophy, 
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
-      description: 'Create and manage tournaments',
-      component: TournamentManagement // Thêm component vào đây
-    },
-    // { 
-    //   id: 'matches', 
-    //   name: 'Match Management', 
-    //   icon: Calendar, 
-    //   color: 'text-green-600',
-    //   bgColor: 'bg-green-100',
-    //   description: 'Schedule and manage matches',
-    //   component: MatchManagement // Thêm component vào đây
-    // },
-    { 
-      id: 'news', 
-      name: 'News Management', 
-      icon: FileText, 
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-      description: 'Create and publish news articles',
-      component: NewsManagement // Thêm component vào đây
-    },
-    /*
-    { 
-      id: 'debug', 
-      name: 'News Debug', 
-      icon: Bug, 
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
-      description: 'Debug and test news API functionality',
-      component: NewsDebugPanel
-    }
-    */ // DISABLED FOR PRODUCTION
-  ];
-
-  const stats = [
+  
+  const stats = isAdmin ? [
     {
       name: 'Total Users',
       value: adminStats?.totalUsers || 0,
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
-      // change: '+12%',
+      // change: '+12%', 
       changeType: 'increase'
     },
     {
@@ -184,10 +199,9 @@ const AdminPanel = () => {
       // change: '+15%',
       changeType: 'increase'
     }
-  ];
+  ] : []; // Nếu không phải admin, mảng stats rỗng
 
-  // Tìm component hiện tại dựa trên activeTab
-  const CurrentTabComponent = tabs.find(tab => tab.id === activeTab)?.component;
+  const CurrentTabComponent = accessibleTabs.find(tab => tab.id === activeTab)?.component;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -222,36 +236,38 @@ const AdminPanel = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.name}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <div className="flex items-center mt-2">
-                    <span className={`text-sm font-medium ${
-                      stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.change}
-                    </span>
-                    {/* <span className="text-sm text-gray-500 ml-1">vs last month</span> */}
+        {/* Stats Grid - Chỉ hiển thị cho ADMIN */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.name}</p>
+                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                    <div className="flex items-center mt-2">
+                      <span className={`text-sm font-medium ${
+                        stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {stat.change}
+                      </span>
+                      {/* <span className="text-sm text-gray-500 ml-1">vs last month</span> */}
+                    </div>
+                  </div>
+                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
+                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
                 </div>
-                <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tabs.map((tab) => (
+            {accessibleTabs.map((tab) => ( // Sử dụng accessibleTabs ở đây
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -277,7 +293,7 @@ const AdminPanel = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 px-6">
-              {tabs.map((tab) => (
+              {accessibleTabs.map((tab) => ( // Sử dụng accessibleTabs ở đây
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -295,15 +311,15 @@ const AdminPanel = () => {
           </div>
 
           <div className="p-6">
-            {/* --- Thay đổi ở đây: Sử dụng Suspense khi render các component động --- */}
+
             <Suspense fallback={<LoadingSpinner text="Loading admin module..." />}>
               {CurrentTabComponent && <CurrentTabComponent />}
             </Suspense>
-            {/* --- Kết thúc thay đổi --- */}
+            
           </div>
         </div>
 
-        {/* System Health */}
+        {/* System Health - Có thể hiển thị cho cả hai vai trò nếu cần */}
         <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
