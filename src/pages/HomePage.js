@@ -1,25 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Trophy, Users, Calendar, Target, ArrowRight, Play, Star } from 'lucide-react';
 import { tournamentServiceFixed as tournamentService } from '../services/tournamentServiceFixed';
-import newsService from '../services/newsService'; // Import trực tiếp từ file riêng
+import newsService from '../services/newsService';
 import { dashboardService } from '../services';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDate, getStatusColor } from '../utils/helpers';
 
+// Import NewsDetailModal
+import NewsDetailModal from '../components/admin/NewsDetailModal'; // Đảm bảo đường dẫn này đúng
+
 const HomePage = () => {
-  // 🔍 DEBUG: Track HomePage lifecycle
   console.log('🏠 [HomePage] Component mounting at', new Date().toLocaleTimeString());
   
+  const [selectedNewsArticle, setSelectedNewsArticle] = useState(null); // State cho tin tức được chọn
+  const [isNewsDetailModalOpen, setIsNewsDetailModalOpen] = useState(false); // State để kiểm soát modal
+
   React.useEffect(() => {
     console.log('🏠 [HomePage] useEffect running at', new Date().toLocaleTimeString());
     
-    // Check if there's any redirect logic hidden somewhere
     const currentPath = window.location.pathname;
     console.log('📍 [HomePage] Current path:', currentPath);
     
-    // Monitor for any URL changes
     const handleUrlChange = () => {
       console.log('⚠️ [HomePage] URL changed to:', window.location.pathname, 'at', new Date().toLocaleTimeString());
     };
@@ -37,7 +40,7 @@ const HomePage = () => {
     'dashboard-stats',
     () => dashboardService.getDashboardStats(),
     {
-      staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+      staleTime: 2 * 60 * 1000,
       onSuccess: (data) => {
         console.log('📊 [HomePage] Dashboard stats loaded at', new Date().toLocaleTimeString());
       },
@@ -50,7 +53,6 @@ const HomePage = () => {
         console.log('📊 [HomePage] Full Response Structure:', JSON.stringify(response, null, 2));
         return response?.data || null;
       },
-      // Add mock data fallback when API fails
       onError: (error) => {
         console.warn('⚠️ [HomePage] Dashboard stats API failed, using mock data:', error);
       }
@@ -65,13 +67,11 @@ const HomePage = () => {
       select: (response) => {
         console.log('🏆 [HomePage] Tournaments API Response:', response);
         
-        // tournamentServiceFixed already handles the response format and returns { data: [...], pagination: {...} }
         if (response && Array.isArray(response.data)) {
           console.log('🏆 [HomePage] Found tournaments:', response.data.length);
           return response.data;
         }
         
-        // Fallback for other formats
         if (Array.isArray(response)) {
           return response;
         }
@@ -85,7 +85,6 @@ const HomePage = () => {
           return response.data.tournaments;
         }
         
-        // Fallback to empty array
         console.warn('⚠️ [HomePage] Tournaments data is not an array:', response);
         return [];
       }
@@ -98,7 +97,6 @@ const HomePage = () => {
     { 
       staleTime: 5 * 60 * 1000,
       select: (data) => {
-        // Handle different response formats
         let newsArray = [];
         
         if (Array.isArray(data)) {
@@ -110,7 +108,6 @@ const HomePage = () => {
         } else if (data?.news && Array.isArray(data.news)) {
           newsArray = data.news;
         } else {
-          // Try to find any array in the response
           if (data && typeof data === 'object') {
             const keys = Object.keys(data);
             for (const key of keys) {
@@ -130,7 +127,32 @@ const HomePage = () => {
     }
   );
 
-  // Create stats array from real data or fallback
+  // Hàm mở modal chi tiết tin tức
+  const openNewsDetailModal = (article) => {
+    setSelectedNewsArticle(article);
+    setIsNewsDetailModalOpen(true);
+    document.body.style.overflow = 'hidden'; // Ngăn cuộn trang
+  };
+
+  // Hàm đóng modal chi tiết tin tức
+  const closeNewsDetailModal = () => {
+    setIsNewsDetailModalOpen(false);
+    setSelectedNewsArticle(null);
+    document.body.style.overflow = 'unset'; // Cho phép cuộn trang
+  };
+
+  // Xử lý Escape key cho News Detail Modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isNewsDetailModalOpen) {
+        closeNewsDetailModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isNewsDetailModalOpen]);
+
   const stats = React.useMemo(() => {
     if (dashboardStats) {
       return [
@@ -161,7 +183,6 @@ const HomePage = () => {
       ];
     }
     
-    // Fallback stats when API is loading or failed
     return [
       { icon: Trophy, label: 'Active Tournaments', value: '-', color: 'text-sports-orange' },
       { icon: Users, label: 'Registered Teams', value: '-', color: 'text-sports-green' },
@@ -195,6 +216,13 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen">
+      {/* NewsDetailModal */}
+      <NewsDetailModal 
+        newsItem={selectedNewsArticle}
+        show={isNewsDetailModalOpen}
+        onClose={closeNewsDetailModal}
+      />
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary-900 via-primary-800 to-sports-purple min-h-screen flex items-center">
         <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -385,13 +413,11 @@ const HomePage = () => {
                   try {
                     const directResult = await newsService.getAllNews();
                     
-                    // Force detailed logging
                     console.log('=== DIRECT API TEST RESULTS ===');
                     console.log('Type of result:', typeof directResult);
                     console.log('Is array:', Array.isArray(directResult));
                     console.log('Result keys:', directResult ? Object.keys(directResult) : 'null');
                     
-                    // Try different ways to access the data
                     if (Array.isArray(directResult)) {
                       console.log('✅ Direct array with', directResult.length, 'items');
                       if (directResult.length > 0) {
@@ -403,7 +429,6 @@ const HomePage = () => {
                     } else {
                       console.log('Not direct array, checking properties...');
                       
-                      // Check various possible structures
                       const possibleKeys = ['data', 'content', 'news', 'items', 'results'];
                       for (const key of possibleKeys) {
                         if (directResult && directResult[key]) {
@@ -418,7 +443,6 @@ const HomePage = () => {
                       }
                     }
                     
-                    // Show a user-friendly alert
                     if (Array.isArray(directResult) && directResult.length > 0) {
                       alert(`✅ Found ${directResult.length} news items! Check console for details.`);
                     } else if (directResult?.data && Array.isArray(directResult.data) && directResult.data.length > 0) {
@@ -443,7 +467,11 @@ const HomePage = () => {
               {news.map((article, index) => {
                 console.log('📰 [HomePage] Rendering article:', article);
                 return (
-                  <div key={article.id || index} className="card hover:shadow-lg transition-shadow duration-300">
+                  <div 
+                    key={article.id || index} 
+                    className="card hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    onClick={() => openNewsDetailModal(article)} // Thêm onClick vào đây
+                  >
                     {/* Display image from attachments if available */}
                     {article.attachments && article.attachments.length > 0 ? (
                       <div className="h-40 rounded-lg mb-4 overflow-hidden bg-gray-200">
@@ -472,17 +500,17 @@ const HomePage = () => {
                       <span className="text-sm text-gray-500">
                         {article.createdAt ? formatDate(article.createdAt) : 'Recent'}
                       </span>
-                      {article.id ? (
-                        <Link
-                          to={`/news/${article.id}`}
-                          className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center space-x-1"
-                        >
-                          <span>Read More</span>
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400 text-sm">No Link</span>
-                      )}
+                      {/* Thay Link bằng Button để mở modal */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Ngăn chặn sự kiện click lan ra thẻ cha
+                          openNewsDetailModal(article);
+                        }}
+                        className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center space-x-1"
+                      >
+                        <span>Read More</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                 );

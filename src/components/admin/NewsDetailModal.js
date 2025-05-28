@@ -48,13 +48,13 @@ const NewsDetailModal = ({ show, onClose, newsItem }) => {
 
           <div className="space-y-4">
             {/* Hình ảnh chính của tin tức */}
-            <div className="w-full h-64 bg-gray-200 flex items-center justify-center overflow-hidden rounded-lg">
+            <div className="w-full bg-gray-200 flex items-center justify-center overflow-hidden rounded-lg">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={newsItem.name || 'News Image'}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x400?text=No+Image'; }}
+                  className="object-contain max-h-96 w-full" // Dòng này đã được sửa
+                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x400?text=No+Image'; e.target.className = 'object-contain max-h-96 w-full p-4'; }} // Và dòng này
                 />
               ) : (
                 <ImageIcon className="h-20 w-20 text-gray-400" />
